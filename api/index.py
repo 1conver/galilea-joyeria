@@ -207,7 +207,7 @@ class handler(BaseHTTPRequestHandler):
 
         # POST /api/auth/login
         if path == "/api/auth/login":
-            login_id = body.get("email", "").strip().lower()
+            login_id = (body.get("email") or body.get("username") or body.get("user") or "").strip().lower()
             password = body.get("password", "").strip()
             users = load_data("users.json", [])
             user = next((u for u in users if (u.get("email", "").lower() == login_id or u.get("username", "").lower() == login_id) and u.get("password") == password), None)

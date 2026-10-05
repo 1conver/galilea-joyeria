@@ -88,7 +88,7 @@ async def handle_login(request):
     except Exception:
         return web.json_response({"success": False, "error": "Credenciales inválidas"}, status=400)
 
-    login_id = data.get("email", "").strip().lower()
+    login_id = (data.get("email") or data.get("username") or data.get("user") or "").strip().lower()
     password = data.get("password", "").strip()
 
     users = load_users()
