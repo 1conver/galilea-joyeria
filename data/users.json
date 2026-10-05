@@ -3,7 +3,7 @@
     "id": "USR-001",
     "name": "Bren",
     "username": "bren",
-    "email": "bren@aurea-joyeria.com",
+    "email": "bren@galilea-joyeria.com",
     "password": "brenpea",
     "role": "admin",
     "role_label": "Administradora General & Dirección",
@@ -12,7 +12,7 @@
   {
     "id": "USR-002",
     "name": "Martín Benítez",
-    "email": "taller@aurea-joyeria.com",
+    "email": "taller@galilea-joyeria.com",
     "password": "taller123",
     "role": "operario",
     "role_label": "Maestro Orfebre & Logística",
@@ -21,7 +21,7 @@
   {
     "id": "USR-47E2",
     "name": "Lucía Morales",
-    "email": "lucia@aurea-joyeria.com",
+    "email": "lucia@galilea-joyeria.com",
     "password": "orfebrerialucia",
     "role": "operario",
     "role_label": "Maestro Orfebre & Logística",

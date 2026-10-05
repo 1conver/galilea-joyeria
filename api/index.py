@@ -44,7 +44,7 @@ ACTIVE_SESSIONS = {
     "admin_default_token": {
         "id": "USR-001",
         "name": "Bren",
-        "email": "bren@aurea-joyeria.com",
+        "email": "bren@galilea-joyeria.com",
         "role": "admin",
         "role_label": "Administradora General & Dirección"
     }
@@ -214,17 +214,17 @@ class handler(BaseHTTPRequestHandler):
 
             if not user:
                 # Verificación directa de credenciales oficiales
-                if login_id in ("bren", "bren@aurea-joyeria.com") and password == "brenpea":
-                    user = {"id": "USR-001", "name": "Bren", "email": "bren@aurea-joyeria.com", "role": "admin", "role_label": "Administradora General & Dirección"}
-                elif login_id in ("taller", "taller@aurea-joyeria.com") and password == "taller123":
-                    user = {"id": "USR-002", "name": "Martín Benítez", "email": "taller@aurea-joyeria.com", "role": "operario", "role_label": "Maestro Orfebre & Logística"}
+                if login_id in ("bren", "bren@galilea-joyeria.com") and password == "brenpea":
+                    user = {"id": "USR-001", "name": "Bren", "email": "bren@galilea-joyeria.com", "role": "admin", "role_label": "Administradora General & Dirección"}
+                elif login_id in ("taller", "taller@galilea-joyeria.com") and password == "taller123":
+                    user = {"id": "USR-002", "name": "Martín Benítez", "email": "taller@galilea-joyeria.com", "role": "operario", "role_label": "Maestro Orfebre & Logística"}
 
             if not user:
                 self._set_headers(401)
                 self.wfile.write(json.dumps({"success": False, "error": "Credenciales inválidas"}).encode('utf-8'))
                 return
 
-            token = f"aur_{secrets.token_hex(16)}"
+            token = f"gal_{secrets.token_hex(16)}"
             user_session = {
                 "id": user["id"],
                 "name": user["name"],
@@ -245,7 +245,7 @@ class handler(BaseHTTPRequestHandler):
             installments = int(body.get("installments", 1))
             brand = "Visa" if card_num.startswith("4") else ("Mastercard" if card_num.startswith("5") else "American Express")
             auth_code = f"AUTH-{uuid.uuid4().hex[:6].upper()}"
-            order_id = f"AUR-CRD-{uuid.uuid4().hex[:8].upper()}"
+            order_id = f"GAL-CRD-{uuid.uuid4().hex[:8].upper()}"
 
             self._set_headers(200)
             self.wfile.write(json.dumps({
@@ -265,7 +265,7 @@ class handler(BaseHTTPRequestHandler):
 
         # POST /api/checkout/preference
         if path == "/api/checkout/preference":
-            order_id = f"AUR-MP-{uuid.uuid4().hex[:8].upper()}"
+            order_id = f"GAL-MP-{uuid.uuid4().hex[:8].upper()}"
             sim_pref_id = f"MP-{uuid.uuid4().hex[:12].upper()}"
             self._set_headers(200)
             self.wfile.write(json.dumps({
@@ -280,7 +280,7 @@ class handler(BaseHTTPRequestHandler):
         if path == "/api/checkout/bank-transfer":
             total_amount = float(body.get("total_amount", 0))
             final_amount = round(total_amount * 0.85, 2)
-            order_id = f"AUR-TRF-{uuid.uuid4().hex[:8].upper()}"
+            order_id = f"GAL-TRF-{uuid.uuid4().hex[:8].upper()}"
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "success": True,
@@ -289,12 +289,12 @@ class handler(BaseHTTPRequestHandler):
                 "final_amount": final_amount,
                 "bank_details": {
                     "banco": "Banco Santander Río / Banco Galicia",
-                    "titular": "ÁUREA ATELIER JOYERÍA S.A.",
+                    "titular": "GALILEA ATELIER JOYERÍA S.A.",
                     "cuit": "30-71829341-8",
                     "cbu": "0720194820000001284910",
-                    "alias": "AUREA.JOYAS.ARG"
+                    "alias": "GALILEA.JOYAS.ARG"
                 },
-                "instructions": f"Transferí ${final_amount:,.2f} ARS a Alias: AUREA.JOYAS.ARG. Referencia: {order_id}"
+                "instructions": f"Transferí ${final_amount:,.2f} ARS a Alias: GALILEA.JOYAS.ARG. Referencia: {order_id}"
             }).encode('utf-8'))
             return
 
@@ -308,9 +308,9 @@ class handler(BaseHTTPRequestHandler):
             else:
                 result = {
                     "success": True,
-                    "reply": "Bienvenido/a a <strong>ÁUREA Atelier</strong>. Como asesora de joyería fina, ¿en qué pieza puedo orientarte hoy?",
+                    "reply": "Bienvenido/a a <strong>GALILEA Atelier</strong>. Como asesora de joyería fina, ¿en qué pieza puedo orientarte hoy?",
                     "products": products[:2],
-                    "provider": "aurea-fallback"
+                    "provider": "galilea-fallback"
                 }
             self._set_headers(200)
             self.wfile.write(json.dumps(result).encode('utf-8'))
@@ -328,7 +328,7 @@ class handler(BaseHTTPRequestHandler):
         # PUT /api/admin/orders/<id>/status
         if path.startswith("/api/admin/orders/") and path.endswith("/status"):
             parts = path.split("/")
-            order_id = parts[4] if len(parts) > 4 else "AUR-ORDER"
+            order_id = parts[4] if len(parts) > 4 else "GAL-ORDER"
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "success": True,

@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime
 from aiohttp import web
 import aiohttp_cors
+import payments
 
 try:
     from ai_advisor import process_chat_message
@@ -94,16 +95,16 @@ async def handle_login(request):
     user = next((u for u in users if (u.get("email", "").lower() == login_id or u.get("username", "").lower() == login_id) and u.get("password") == password), None)
 
     if not user:
-        if login_id in ("bren", "bren@aurea-joyeria.com") and password == "brenpea":
-            user = {"id": "USR-001", "name": "Bren", "email": "bren@aurea-joyeria.com", "role": "admin", "role_label": "Administradora General & Dirección"}
-        elif login_id in ("taller", "taller@aurea-joyeria.com") and password == "taller123":
-            user = {"id": "USR-002", "name": "Martín Benítez", "email": "taller@aurea-joyeria.com", "role": "operario", "role_label": "Maestro Orfebre & Logística"}
+        if login_id in ("bren", "bren@galilea-joyeria.com") and password == "brenpea":
+            user = {"id": "USR-001", "name": "Bren", "email": "bren@galilea-joyeria.com", "role": "admin", "role_label": "Administradora General & Dirección"}
+        elif login_id in ("taller", "taller@galilea-joyeria.com") and password == "taller123":
+            user = {"id": "USR-002", "name": "Martín Benítez", "email": "taller@galilea-joyeria.com", "role": "operario", "role_label": "Maestro Orfebre & Logística"}
 
     if not user:
         return web.json_response({"success": False, "error": "Usuario o contraseña incorrectos"}, status=401)
 
     # Generar token de sesión seguro
-    token = f"aur_{secrets.token_hex(24)}"
+    token = f"gal_{secrets.token_hex(24)}"
     user_session = {
         "id": user["id"],
         "name": user["name"],
@@ -247,7 +248,7 @@ async def handle_admin_create_product(request):
 
     products = load_products()
     new_prod = {
-        "id": f"aurea-{len(products) + 1:02d}",
+        "id": f"galilea-{len(products) + 1:02d}",
         "name": name,
         "category": category,
         "category_label": category.capitalize(),
@@ -377,171 +378,29 @@ async def handle_get_categories(request):
 # --- COBROS CON AUTENTICACIÓN AUTOMÁTICA EN LA API ---
 
 async def handle_process_card(request):
-    """POST /api/checkout/process-card - Autorización bancaria automática para tarjetas"""
-    try:
-        data = await request.json()
-    except Exception:
-        return web.json_response({"success": False, "error": "Datos inválidos"}, status=400)
-
-    card_number = str(data.get("card_number", "")).replace(" ", "").replace("-", "")
-    cardholder = data.get("cardholder", "").strip()
-    cvv = str(data.get("cvv", "")).strip()
-    installments = int(data.get("installments", 1))
-    total_amount = float(data.get("total_amount", 0))
-    dni = data.get("dni", "").strip()
-    customer_name = data.get("customer_name", cardholder)
-    email = data.get("email", "cliente@aurea-joyeria.com")
-    phone = data.get("phone", "+54 9 11 4000-0000")
-    address = data.get("address", "Av. Alvear 1850")
-    province = data.get("province", "CABA")
-    items = data.get("items", [])
-
-    # Validación formal y algorítmica de la tarjeta en el gateway
-    if not card_number or len(card_number) < 15 or len(card_number) > 16:
-        return web.json_response({"success": False, "error": "Número de tarjeta inválido"}, status=400)
-    if not cardholder:
-        return web.json_response({"success": False, "error": "Titular de tarjeta obligatorio"}, status=400)
-    if not cvv or len(cvv) not in [3, 4]:
-        return web.json_response({"success": False, "error": "Código de seguridad CVV inválido"}, status=400)
-
-    if card_number.startswith("4"):
-        brand = "Visa"
-    elif card_number.startswith(("51", "52", "53", "54", "55", "22", "23", "24", "25", "26", "27")):
-        brand = "Mastercard"
-    elif card_number.startswith(("34", "37")):
-        brand = "American Express"
-    else:
-        brand = "Tarjeta Bancaria"
-
-    # APROBACIÓN AUTOMÁTICA DEL GATEWAY (Estándar de e-commerce real)
-    # El procesador bancario confirma fondos y emite token de autorización
-    order_id = f"AUR-CRD-{uuid.uuid4().hex[:8].upper()}"
-    installment_amount = round(total_amount / max(installments, 1), 2)
-    auth_code = f"AUTH-{uuid.uuid4().hex[:6].upper()}"
-
-    order_record = {
-        "id": order_id,
-        "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "customer": {
-            "name": customer_name,
-            "email": email,
-            "phone": phone,
-            "dni": dni,
-            "address": address,
-            "province": province,
-            "zip": data.get("zip", "")
-        },
-        "items": items if items else [
-            {
-                "id": "aurea-01",
-                "name": "Pieza de Orfebrería Fina",
-                "metal": "Oro 18K / Plata 925",
-                "size": "Ajuste a medida",
-                "quantity": 1,
-                "price": total_amount,
-                "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85"
-            }
-        ],
-        "total_amount": total_amount,
-        "payment_method": "credit_card",
-        "payment_method_label": f"{brand} (*{card_number[-4:]})",
-        "installments": installments,
-        "installment_amount": installment_amount,
-        "payment_status": "approved",
-        "payment_status_label": f"Aprobación Automática ({auth_code})",
-        "shipping_status": "in_workshop",
-        "shipping_status_label": "En Taller (Ajuste de Medidas)",
-        "shipping_carrier": "Andreani Asegurado",
-        "tracking_number": "",
-        "notes": f"Cobro autenticado por Gateway Bancario en {installments} cuotas. Titular: {cardholder}"
-    }
-    add_order(order_record)
-
-    return web.json_response({
-        "success": True,
-        "order_id": order_id,
-        "payment_status": "approved",
-        "brand": brand,
-        "last_four": card_number[-4:],
-        "cardholder": cardholder,
-        "installments": installments,
-        "installment_amount": installment_amount,
-        "total_paid": total_amount,
-        "currency": "ARS",
-        "auth_code": auth_code,
-        "date": order_record["date"],
-        "message": f"Pago autenticado automáticamente por la red bancaria en {installments} cuota{'s' if installments > 1 else ''} con {brand}."
-    })
+    """Deshabilitado: los datos de tarjeta no deben pasar por este servidor. Se paga con Mercado Pago."""
+    return web.json_response({"success": False, "error": "Pagá con tarjeta desde Mercado Pago (hasta 6 cuotas)."}, status=410)
 
 async def handle_create_mp_preference(request):
-    """POST /api/checkout/preference - Autenticación automática vía Mercado Pago"""
+    """POST /api/checkout/preference - crea orden pendiente + preferencia de Mercado Pago"""
     try:
         data = await request.json()
-    except Exception:
-        return web.json_response({"success": False, "error": "Cuerpo JSON inválido"}, status=400)
-        
-    items = data.get("items", [])
-    payer = data.get("payer", {})
-    
-    if not items:
-        return web.json_response({"success": False, "error": "La bolsa de compras está vacía"}, status=400)
+        return web.json_response(payments.create_preference(data, load_products(), add_order))
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        print("MP error:", e)
+        return web.json_response({"success": False, "error": "No pudimos iniciar el pago"}, status=502)
 
-    total_amount = sum(float(item.get("unit_price", 0)) * int(item.get("quantity", 1)) for item in items)
-    order_id = f"AUR-MP-{uuid.uuid4().hex[:8].upper()}"
-
-    # Registro de orden con aprobación automática del gateway
-    order_record = {
-        "id": order_id,
-        "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "customer": {
-            "name": payer.get("name", "Cliente"),
-            "email": payer.get("email", "cliente@aurea-joyeria.com"),
-            "phone": payer.get("phone", "+54 9 11 4000-0000"),
-            "dni": str(payer.get("dni", "")),
-            "address": payer.get("address", "A coordinar"),
-            "province": payer.get("province", "CABA"),
-            "zip": payer.get("zip", "")
-        },
-        "items": [
-            {
-                "id": it.get("id", ""),
-                "name": it.get("title", ""),
-                "metal": "Oro 18K / Plata 925",
-                "size": it.get("size", "Estándar"),
-                "quantity": int(it.get("quantity", 1)),
-                "price": float(it.get("unit_price", 0)),
-                "image": it.get("image", "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=85")
-            }
-            for it in items
-        ],
-        "total_amount": total_amount,
-        "payment_method": "mercadopago",
-        "payment_method_label": "Mercado Pago",
-        "installments": 3,
-        "installment_amount": round(total_amount / 3, 2),
-        "payment_status": "approved",
-        "payment_status_label": "Pago Aprobado (Mercado Pago)",
-        "shipping_status": "in_workshop",
-        "shipping_status_label": "En Taller (Preparación Orfebre)",
-        "shipping_carrier": "Andreani Asegurado",
-        "tracking_number": "",
-        "notes": "Cobro autenticado por API de Mercado Pago Argentina."
-    }
-    add_order(order_record)
-
-    simulated_pref_id = f"MP-{uuid.uuid4().hex[:12].upper()}"
-    return web.json_response({
-        "success": True,
-        "mode": "sandbox",
-        "order_id": order_id,
-        "preference_id": simulated_pref_id,
-        "init_point": f"/#checkout-mp-mock?pref_id={simulated_pref_id}&order={order_id}",
-        "message": "Cobro autenticado exitosamente por Mercado Pago. Orden derivada a taller.",
-        "order_summary": {
-            "order_id": order_id,
-            "total_ars": total_amount
-        }
-    })
+async def handle_mp_webhook(request):
+    """POST /api/checkout/webhook - notificaciones de Mercado Pago"""
+    try: body = await request.json()
+    except Exception: body = {}
+    try:
+        code, out = payments.process_webhook(dict(request.query), body, dict(request.headers), load_orders, save_orders)
+    except Exception as e:
+        print("Webhook error:", e); code, out = 500, {"error": "reintentar"}
+    return web.json_response(out, status=code)
 
 async def handle_bank_transfer(request):
     """POST /api/checkout/bank-transfer - Transferencia bancaria (Requiere validación de acreditación)"""
@@ -555,10 +414,10 @@ async def handle_bank_transfer(request):
 
     total_amount = float(data.get("total_amount", 0))
     final_amount = round(total_amount * (1 - discount_pct), 2)
-    order_id = f"AUR-TRF-{uuid.uuid4().hex[:8].upper()}"
+    order_id = f"GAL-TRF-{uuid.uuid4().hex[:8].upper()}"
 
     customer_name = data.get("customer_name", "Cliente")
-    email = data.get("email", "cliente@aurea-joyeria.com")
+    email = data.get("email", "cliente@galilea-joyeria.com")
     phone = data.get("phone", "+54 9 11 4000-0000")
     dni = str(data.get("dni", ""))
     address = data.get("address", "A convenir")
@@ -579,8 +438,8 @@ async def handle_bank_transfer(request):
         },
         "items": items if items else [
             {
-                "id": "aurea-custom",
-                "name": "Selección de Joyería ÁUREA",
+                "id": "galilea-custom",
+                "name": "Selección de Joyería GALILEA",
                 "metal": "Oro 18K",
                 "size": "A medida",
                 "quantity": 1,
@@ -612,14 +471,14 @@ async def handle_bank_transfer(request):
         "currency": "ARS",
         "bank_details": {
             "banco": "Banco Santander Río / Banco Galicia",
-            "titular": "ÁUREA ATELIER JOYERÍA S.A.",
+            "titular": "GALILEA ATELIER JOYERÍA S.A.",
             "cuit": "30-71829341-8",
             "cbu": "0720194820000001284910",
-            "alias": "AUREA.JOYAS.ARG",
+            "alias": "GALILEA.JOYAS.ARG",
             "tipo_cuenta": "Cuenta Corriente Especial en Pesos"
         },
         "instructions": (
-            f"Transferí el importe de ${final_amount:,.2f} ARS a nuestro Alias: AUREA.JOYAS.ARG. "
+            f"Transferí el importe de ${final_amount:,.2f} ARS a nuestro Alias: GALILEA.JOYAS.ARG. "
             f"Referencia: {order_id}."
         )
     })
@@ -642,9 +501,9 @@ async def handle_ai_chat(request):
     else:
         result = {
             "success": True,
-            "reply": "Bienvenido/a a <strong>ÁUREA Atelier</strong>. ¿En qué pieza o consulta de joyería puedo orientarte hoy?",
+            "reply": "Bienvenido/a a <strong>GALILEA Atelier</strong>. ¿En qué pieza o consulta de joyería puedo orientarte hoy?",
             "products": products[:2],
-            "provider": "aurea-fallback"
+            "provider": "galilea-fallback"
         }
 
     return web.json_response(result)
@@ -755,6 +614,7 @@ def create_app():
     app.router.add_get("/api/settings", handle_get_settings)
     app.router.add_post("/api/checkout/preference", handle_create_mp_preference)
     app.router.add_post("/api/checkout/process-card", handle_process_card)
+    app.router.add_post("/api/checkout/webhook", handle_mp_webhook)
     app.router.add_post("/api/checkout/bank-transfer", handle_bank_transfer)
     app.router.add_post("/api/chat", handle_ai_chat)
 
@@ -804,7 +664,7 @@ def create_app():
         index_file = os.path.join(PUBLIC_DIR, "index.html")
         if os.path.exists(index_file):
             return web.FileResponse(index_file)
-        return web.Response(text="ÁUREA Atelier is running.", content_type="text/plain")
+        return web.Response(text="GALILEA Atelier is running.", content_type="text/plain")
 
     app.router.add_get("/", index_handler)
 
@@ -813,7 +673,7 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     print(f"==================================================")
-    print(f"   ÁUREA Atelier Joyería - Servidor Activo")
+    print(f"   GALILEA Atelier Joyería - Servidor Activo")
     print(f"   Tienda: http://localhost:{PORT}")
     print(f"   Panel Modular: http://localhost:{PORT}/admin")
     print(f"   Autenticación de pagos: AUTOMÁTICA")

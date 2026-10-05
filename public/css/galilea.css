@@ -1,0 +1,44 @@
+/* GALILEA — capa de diseño: minimalismo de vanguardia. Se carga después de styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600&display=swap');
+:root{
+  --bg-main:#F2F0EB; --bg-surface:#FAF9F6; --bg-subtle:#E9E6DF; --bg-accent:#DEDAD1;
+  --text-primary:#0F0F0E; --text-secondary:#55534E; --text-muted:#948F85; --text-light:#F2F0EB;
+  --border-light:#D9D5CB; --border-medium:#BDB8AB; --border-dark:#0F0F0E;
+  --gold-primary:#8C6D46; --gold-dark:#6E5333; --gold-light:#D9CBB5; --gold-tint:#EFE9DE;
+  --pastel-rose-primary:#0F0F0E; --pastel-rose-hover:#2A2927; --pastel-rose-deep:#0F0F0E; --pastel-rose-accent:#8C6D46;
+  --pastel-rose:#E9E6DF; --pastel-rose-bg:#F2F0EB; --pastel-rose-subtle:#FAF9F6; --pastel-rose-border:#D9D5CB;
+  --pastel-rose-gradient:#0F0F0E; --pastel-rose-gradient-hover:#2A2927;
+  --pastel-celeste:#E9E6DF; --pastel-celeste-bg:#F2F0EB; --pastel-celeste-border:#D9D5CB; --pastel-celeste-hover:#DEDAD1; --pastel-celeste-accent:#0F0F0E;
+  --pastel-beige:#E9E6DF; --pastel-beige-bg:#F2F0EB; --pastel-beige-border:#D9D5CB; --pastel-beige-hover:#DEDAD1; --pastel-beige-accent:#8C6D46;
+  --radius-xs:0; --radius-sm:0; --radius-md:0; --radius-full:0;
+  --shadow-sm:none; --shadow-md:0 20px 50px -30px rgba(15,15,14,.35);
+  --font-serif:'Instrument Serif',Georgia,serif;
+  --font-sans:'Inter Tight',-apple-system,'Segoe UI',sans-serif;
+}
+body{background:var(--bg-main);color:var(--text-primary);font-family:var(--font-sans);font-weight:400;-webkit-font-smoothing:antialiased}
+.top-ticker{background:var(--text-primary);color:var(--bg-main);letter-spacing:.2em;text-transform:uppercase;font-size:.66rem}
+.site-header{background:rgba(242,240,235,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border-light)}
+.brand-title{font-family:var(--font-serif);font-weight:400;letter-spacing:.42em;color:var(--text-primary)}
+.brand-subtitle{color:var(--text-muted);letter-spacing:.3em;text-transform:uppercase;font-size:.6rem}
+.nav-item{text-transform:uppercase;letter-spacing:.2em;font-size:.68rem;font-weight:500}
+.hero-title,.section-title,.story-title{font-family:var(--font-serif);font-weight:400;letter-spacing:-.02em;line-height:.98}
+.hero-title{font-size:clamp(3rem,8vw,7rem)} .hero-title em{font-style:italic;color:var(--gold-primary)}
+.hero-tag,.section-subtitle,.footer-col-title,.badge-label{text-transform:uppercase;letter-spacing:.28em;font-size:.66rem;color:var(--gold-primary)}
+.btn-luxury,.btn-luxury-outline{border-radius:0;text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:500;padding:1.05rem 2rem;transition:all .35s cubic-bezier(.16,1,.3,1)}
+.btn-luxury{background:var(--text-primary);color:var(--bg-main);border:1px solid var(--text-primary)}
+.btn-luxury:hover{background:transparent;color:var(--text-primary)}
+.btn-luxury-outline{background:transparent;border:1px solid var(--text-primary);color:var(--text-primary)}
+.btn-luxury-outline:hover{background:var(--text-primary);color:var(--bg-main)}
+.hero-img-card img,.story-img-wrap img{filter:grayscale(.25) contrast(1.03)}
+.hero-floating-badge,.pillar-card{background:var(--bg-surface);border:1px solid var(--border-light);box-shadow:none}
+.products-grid{gap:1px;background:var(--border-light);border:1px solid var(--border-light)}
+.products-grid>*{background:var(--bg-main)}
+.product-card,.product-card *{border-radius:0!important}
+.product-card img{transition:transform 1.2s cubic-bezier(.16,1,.3,1)} .product-card:hover img{transform:scale(1.04)}
+.select-minimal,input,textarea,select{border-radius:0;background:transparent}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text-primary)}
+.site-footer{background:var(--text-primary)!important;color:var(--bg-main)}
+.footer-brand-title{font-family:var(--font-serif);letter-spacing:.42em;font-weight:400}
+.cart-drawer,.modal-overlay>div{border-radius:0}
+::selection{background:var(--text-primary);color:var(--bg-main)}
+:focus-visible{outline:2px solid var(--gold-primary);outline-offset:3px}

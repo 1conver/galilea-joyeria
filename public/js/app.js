@@ -1,5 +1,5 @@
 /**
- * ÁUREA ATELIER - Frontend Application Logic
+ * GALILEA ATELIER - Frontend Application Logic
  * Joyería Minimalista & Pasarela de Pagos Argentina
  */
 
@@ -130,7 +130,7 @@ function initIcons() {
 
 function loadCartFromStorage() {
   try {
-    const stored = localStorage.getItem('aurea_cart');
+    const stored = localStorage.getItem('galilea_cart');
     if (stored) {
       AppState.cart = JSON.parse(stored);
     }
@@ -142,7 +142,7 @@ function loadCartFromStorage() {
 
 function saveCartToStorage() {
   try {
-    localStorage.setItem('aurea_cart', JSON.stringify(AppState.cart));
+    localStorage.setItem('galilea_cart', JSON.stringify(AppState.cart));
   } catch (e) {
     console.error('Error guardando carrito:', e);
   }
@@ -154,7 +154,7 @@ async function fetchProducts() {
   const gridEl = document.getElementById('products-grid');
   gridEl.innerHTML = `
     <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
-      Cargando catálogo exclusivo de Áurea Atelier...
+      Cargando catálogo exclusivo de Galilea Atelier...
     </div>
   `;
 
@@ -1121,7 +1121,7 @@ function renderPaymentSuccess(data) {
       </span>
 
       <h2 class="serif-font" style="font-size: 2.4rem; color: var(--text-primary); margin: -0.5rem 0 0.5rem;">
-        ¡Gracias por elegir ÁUREA Atelier!
+        ¡Gracias por elegir GALILEA Atelier!
       </h2>
 
       <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 520px; line-height: 1.6;">
@@ -1283,7 +1283,7 @@ function setupEventListeners() {
   }
 }
 
-// --- ASESORA VIRTUAL DE JOYERÍA CON IA (ÁUREA CONCIERGE) ---
+// --- ASESORA VIRTUAL DE JOYERÍA CON IA (GALILEA CONCIERGE) ---
 
 function initAIChatAdvisor() {
   const widgetEl = document.getElementById('ai-chat-widget');
@@ -1299,7 +1299,7 @@ function initAIChatAdvisor() {
 
   // Historial de conversación para contexto de IA multi-turno
   const chatHistory = [];
-  let isSoundEnabled = localStorage.getItem('aurea_chat_sound') !== 'muted';
+  let isSoundEnabled = localStorage.getItem('galilea_chat_sound') !== 'muted';
 
   if (!widgetEl || !triggerBtn || !formEl) return;
 
@@ -1316,7 +1316,7 @@ function initAIChatAdvisor() {
   if (soundToggleBtn) {
     soundToggleBtn.addEventListener('click', () => {
       isSoundEnabled = !isSoundEnabled;
-      localStorage.setItem('aurea_chat_sound', isSoundEnabled ? 'active' : 'muted');
+      localStorage.setItem('galilea_chat_sound', isSoundEnabled ? 'active' : 'muted');
       updateSoundIcon();
       showToast(isSoundEnabled ? 'Sonido del chat activado' : 'Sonido del chat silenciado');
       if (isSoundEnabled) playChatChime();
@@ -1694,7 +1694,7 @@ const JEWELRY_CONTEXT_WORDS = [
   'precio', 'precios', 'cuanto sale', 'cuanto cuesta', 'costo', 'costos', 'presupuesto', 'barato', 'accesible', 'caro', 'exclusivo',
   'pago', 'pagos', 'cuota', 'cuotas', 'tarjeta', 'tarjetas', 'mercado pago', 'mercadopago', 'transferencia', 'descuento', '15%', 'banco',
   'envio', 'envios', 'andreani', 'tiempo', 'demora', 'entrega', 'despacho', 'retiro',
-  'taller', 'atelier', 'alvear', 'aurea', 'direccion', 'donde estan', 'donde queda', 'visitar', 'cita', 'horario', 'local', 'tienda',
+  'taller', 'atelier', 'alvear', 'galilea', 'direccion', 'donde estan', 'donde queda', 'visitar', 'cita', 'horario', 'local', 'tienda',
   'regalo', 'regalos', 'aniversario', 'compromiso', 'casamiento', 'boda', 'novia', 'mama', 'esposa',
   'limpieza', 'limpiar', 'cuidado', 'mantenimiento', 'garantia', 'certificado', 'autenticidad', 'pulido',
   'personalizado', 'personalizados', 'a medida', 'grabar', 'grabado', 'stock', 'como compro', 'contacto', 'whatsapp',
@@ -1807,7 +1807,7 @@ function generateAIResponse(rawQuery) {
   // 1. Guardrail para temas ajenos a la joyería
   if (isOffTopicJS(rawQuery)) {
     return {
-      text: `Disculpas, como asesora de **ÁUREA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier.\n\nPodés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés.`,
+      text: `Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier.\n\nPodés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés.`,
       products: [],
       suggestions: ["¿Cómo elijo mi talle de anillo?", "Ver joyas en Oro 18K", "Promociones y Cuotas"]
     };
@@ -1816,7 +1816,7 @@ function generateAIResponse(rawQuery) {
   // 2. Saludos de cortesía
   if (['hola', 'buen dia', 'buenas tardes', 'buenas noches', 'que tal', 'como estas', 'buenas'].some(k => norm.includes(k)) && norm.split(' ').length <= 4) {
     return {
-      text: `¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **ÁUREA Atelier**.\n\nSoy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas fijas sin interés** y envíos asegurados por Andreani.\n\n¿Te gustaría explorar alguna colección en particular?`,
+      text: `¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **GALILEA Atelier**.\n\nSoy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas fijas sin interés** y envíos asegurados por Andreani.\n\n¿Te gustaría explorar alguna colección en particular?`,
       products: matched,
       suggestions: ["Ver Anillos y Solitarios", "¿Cómo mido mi talle?", "Joyas en Oro 18K"]
     };
@@ -1832,9 +1832,9 @@ function generateAIResponse(rawQuery) {
   }
 
   // 4. Quiénes son / Sobre la marca / Historia
-  if (['quienes son', 'quien sos', 'sobre ustedes', 'marca aurea', 'historia', 'que es aurea'].some(k => norm.includes(k))) {
+  if (['quienes son', 'quien sos', 'sobre ustedes', 'marca galilea', 'historia', 'que es galilea'].some(k => norm.includes(k))) {
     return {
-      text: `**ÁUREA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\n• **Nobleza Material:** Forjamos alianzas, solitarios, gargantillas y pulseras exclusivamente en metales nobles genuinos (Oro 18K y Plata 925 de ley) sin baños ni enchapados superficiales.\n• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.\n• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo.`,
+      text: `**GALILEA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\n• **Nobleza Material:** Forjamos alianzas, solitarios, gargantillas y pulseras exclusivamente en metales nobles genuinos (Oro 18K y Plata 925 de ley) sin baños ni enchapados superficiales.\n• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.\n• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo.`,
       products: matched,
       suggestions: ["Ver Colección Destacada", "Dónde estamos ubicados", "Hablar con un orfebre"]
     };
@@ -1852,7 +1852,7 @@ function generateAIResponse(rawQuery) {
   // 6. Garantía, Autenticidad, Calidad y Mantenimiento
   if (['garantia', 'certificado', 'autenticidad', 'original', 'calidad', 'reparar', 'reparacion', 'mantenimiento', 'pulido'].some(k => norm.includes(k))) {
     return {
-      text: `En **ÁUREA Atelier** respaldamos cada obra con los más altos estándares de orfebrería:\n\n• **Garantía Perpetua:** Avalamos de por vida la nobleza y ley de nuestros metales (Oro 18K y Plata 925).\n• **Certificado de Autenticidad Foliado:** Cada pieza incluye especificación de aleación, gramaje y graduación de gemas.\n• **Primer Ajuste de Talle Bonificado:** Si el anillo no te calza a la perfección, lo ajustamos sin cargo con retiro y entrega asegurada.\n• **Mantenimiento Anual Gratuito:** Disponés de pulido y revisión de engastes sin costo anual de por vida en nuestro atelier.`,
+      text: `En **GALILEA Atelier** respaldamos cada obra con los más altos estándares de orfebrería:\n\n• **Garantía Perpetua:** Avalamos de por vida la nobleza y ley de nuestros metales (Oro 18K y Plata 925).\n• **Certificado de Autenticidad Foliado:** Cada pieza incluye especificación de aleación, gramaje y graduación de gemas.\n• **Primer Ajuste de Talle Bonificado:** Si el anillo no te calza a la perfección, lo ajustamos sin cargo con retiro y entrega asegurada.\n• **Mantenimiento Anual Gratuito:** Disponés de pulido y revisión de engastes sin costo anual de por vida en nuestro atelier.`,
       products: matched,
       suggestions: ["¿Cómo mido mi talle?", "Joyas en Oro 18K", "Consultar por WhatsApp"]
     };
@@ -1861,7 +1861,7 @@ function generateAIResponse(rawQuery) {
   // 7. Cambios, Devoluciones y Satisfacción
   if (['cambio', 'cambios', 'devolucion', 'devoluciones', 'si no me gusta', 'si no le queda', 'si me equivoque', 'politica de cambio'].some(k => norm.includes(k))) {
     return {
-      text: `Comprar en ÁUREA es 100% libre de riesgos:\n\n• **Plazo de Cambio:** Disponés de **30 días corridos** desde la recepción de tu joya para solicitar un cambio de modelo o medida.\n• **Primer Ajuste Bonificado:** Si elegiste un anillo y el talle necesita modificación, el primer ajuste es **100% gratuito** con retiro y entrega asegurada a domicilio.\n• **Procedimiento Simple:** Nos contactás por WhatsApp o mail y Andreani retira el paquete asegurado por tu domicilio sin complicaciones.`,
+      text: `Comprar en GALILEA es 100% libre de riesgos:\n\n• **Plazo de Cambio:** Disponés de **30 días corridos** desde la recepción de tu joya para solicitar un cambio de modelo o medida.\n• **Primer Ajuste Bonificado:** Si elegiste un anillo y el talle necesita modificación, el primer ajuste es **100% gratuito** con retiro y entrega asegurada a domicilio.\n• **Procedimiento Simple:** Nos contactás por WhatsApp o mail y Andreani retira el paquete asegurado por tu domicilio sin complicaciones.`,
       products: matched,
       suggestions: ["¿Cómo mido mi talle?", "Iniciar una compra", "Hablar con soporte"]
     };
@@ -1870,7 +1870,7 @@ function generateAIResponse(rawQuery) {
   // 8. Cómo comprar / Proceso de pedido
   if (['como compro', 'como es el proceso', 'pasos para comprar', 'como pago', 'hacer pedido', 'agregar al carrito', 'como hacer la compra', 'como encargar'].some(k => norm.includes(k))) {
     return {
-      text: `Comprar en ÁUREA es ágil, seguro y transparente:\n\n1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.\n2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.\n3. **Elegí tu beneficio de pago:** Hasta **6 cuotas fijas sin interés** con tarjetas vía Mercado Pago o **15% OFF directo** por Transferencia Bancaria.\n4. **Envío asegurado:** Lo despachamos gratis a tu domicilio con Andreani y te enviamos el código de seguimiento satelital.`,
+      text: `Comprar en GALILEA es ágil, seguro y transparente:\n\n1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.\n2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.\n3. **Elegí tu beneficio de pago:** Hasta **6 cuotas fijas sin interés** con tarjetas vía Mercado Pago o **15% OFF directo** por Transferencia Bancaria.\n4. **Envío asegurado:** Lo despachamos gratis a tu domicilio con Andreani y te enviamos el código de seguimiento satelital.`,
       products: matched,
       suggestions: ["Ver Catálogo Completo", "Medios de pago y cuotas", "Hablar con un orfebre"]
     };
@@ -1879,7 +1879,7 @@ function generateAIResponse(rawQuery) {
   // 9. Contacto humano y WhatsApp
   if (['contacto', 'telefono', 'mail', 'whatsapp', 'humano', 'persona', 'asesor real', 'hablar con alguien', 'numero'].some(k => norm.includes(k))) {
     return {
-      text: `Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:\n\n• **WhatsApp Directo:** [+54 9 11 4050-9988](https://wa.me/5491140509988) (Atención personalizada de lunes a sábados).\n• **Correo Institucional:** atelier@aurea-joyeria.com\n• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\nHaciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana.`,
+      text: `Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:\n\n• **WhatsApp Directo:** [+54 9 11 4050-9988](https://wa.me/5491140509988) (Atención personalizada de lunes a sábados).\n• **Correo Institucional:** atelier@galilea-joyeria.com\n• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\nHaciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana.`,
       products: [],
       suggestions: ["Abrir WhatsApp Oficial", "Ver catálogo de joyas", "Seguir chateando aquí"]
     };
@@ -1897,7 +1897,7 @@ function generateAIResponse(rawQuery) {
   // 11. Consulta explícita sobre cómo medir el talle de anillo
   if (['talle', 'talla', 'como se mi talle', 'como mido', 'medir', 'medida', 'diametro', 'milimetro', 'tabla de talles', 'numero de anillo', 'medir mi dedo', 'tamano de anillo'].some(k => norm.includes(k))) {
     return {
-      text: `Para conocer tu talle exacto en Argentina, el método más preciso es medir con regla milimetrada el **diámetro interno** de un anillo que te quede cómodo (sin incluir el borde metálico):\n\n• **16.5 mm** = Talle 12 / 13\n• **17.2 mm** = Talle 14 / 15 *(estándar femenino más frecuente)*\n• **18.0 mm** = Talle 17 / 18\n• **19.0 mm** = Talle 20 / 21\n\n**Tranquilidad Áurea:** Todas nuestras piezas cuentan con el **primer ajuste de talle 100% bonificado sin cargo**, incluyendo retiro y entrega asegurada en tu domicilio.`,
+      text: `Para conocer tu talle exacto en Argentina, el método más preciso es medir con regla milimetrada el **diámetro interno** de un anillo que te quede cómodo (sin incluir el borde metálico):\n\n• **16.5 mm** = Talle 12 / 13\n• **17.2 mm** = Talle 14 / 15 *(estándar femenino más frecuente)*\n• **18.0 mm** = Talle 17 / 18\n• **19.0 mm** = Talle 20 / 21\n\n**Tranquilidad Galilea:** Todas nuestras piezas cuentan con el **primer ajuste de talle 100% bonificado sin cargo**, incluyendo retiro y entrega asegurada en tu domicilio.`,
       products: matchProductsJS('anillos', products),
       suggestions: ["Ver anillos en stock", "¿Y si es para regalo sorpresa?", "Consultar por WhatsApp"]
     };
@@ -1915,7 +1915,7 @@ function generateAIResponse(rawQuery) {
   // 13. Diamantes cultivados vs Circones / Zirconia / Sintéticos
   if (['circon', 'zirconia', 'cubic', 'sintetico', 'moissanita', 'falso', 'trucho', 'es real'].some(k => norm.includes(k))) {
     return {
-      text: `Existe una diferencia radical entre un circón y un diamante cultivado:\n\n• **Circón o Zirconia:** Es una gema sintética blanda de laboratorio (óxido de circonio) que se desgasta, raya y pierde su brillo o se vuelve lechosa con el roce y el agua en pocos meses.\n• **Diamante Cultivado Áurea:** Es un **diamante auténtico** en su física, química y óptica (100% carbono puro cristalizado con dureza 10 Mohs). Brilla eternamente, no se raya y viene con certificación gemológica oficial.`,
+      text: `Existe una diferencia radical entre un circón y un diamante cultivado:\n\n• **Circón o Zirconia:** Es una gema sintética blanda de laboratorio (óxido de circonio) que se desgasta, raya y pierde su brillo o se vuelve lechosa con el roce y el agua en pocos meses.\n• **Diamante Cultivado Galilea:** Es un **diamante auténtico** en su física, química y óptica (100% carbono puro cristalizado con dureza 10 Mohs). Brilla eternamente, no se raya y viene con certificación gemológica oficial.`,
       products: matchProductsJS('diamantes', products),
       suggestions: ["Ver joyas con Diamantes", "Certificación VVS", "Consultar por WhatsApp"]
     };
@@ -1978,7 +1978,7 @@ function generateAIResponse(rawQuery) {
   // 20. Metales Nobles (Oro 18k, Oro Blanco, Plata 925)
   if (['oro', 'plata', 'metal', 'metales', '18k', '925', 'blanco', 'rosa', 'amarillo', 'despinta', 'enchapado', 'macizo', 'rodio'].some(k => norm.includes(k))) {
     return {
-      text: `En **ÁUREA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:\n\n• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.\n• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.\n• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo antialérgico.\n\nPrescindimos de baños superficiales perecederos para que cada joya conviva con tu piel de generación en generación.`,
+      text: `En **GALILEA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:\n\n• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.\n• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.\n• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo antialérgico.\n\nPrescindimos de baños superficiales perecederos para que cada joya conviva con tu piel de generación en generación.`,
       products: matched,
       suggestions: ["Joyas en Oro 18K", "Joyas en Plata 925", "Garantía perpetua"]
     };
@@ -1996,7 +1996,7 @@ function generateAIResponse(rawQuery) {
   // 22. Descuentos, Promociones y Ofertas
   if (['descuento', 'descuentos', 'promocion', 'promociones', 'promo', 'promos', 'oferta', 'ofertas', 'cupon', '15%'].some(k => norm.includes(k))) {
     return {
-      text: `En **ÁUREA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`AUREA.JOYAS.ARG\`).\n• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
+      text: `En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`GALILEA.JOYAS.ARG\`).\n• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
       products: matched,
       suggestions: ["Datos de Transferencia 15% OFF", "Calcular cuotas", "Ver catálogo de joyas"]
     };
@@ -2024,7 +2024,7 @@ function generateAIResponse(rawQuery) {
   // 25. Medios de Pago, Cuotas y Transferencia
   if (['pago', 'pagos', 'cuota', 'cuotas', 'tarjeta', 'tarjetas', 'mercado pago', 'mercadopago', 'transferencia', 'banco', 'alias', 'cbu'].some(k => norm.includes(k))) {
     return {
-      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`AUREA.JOYAS.ARG\`).\n• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits.`,
+      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`GALILEA.JOYAS.ARG\`).\n• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits.`,
       products: matched,
       suggestions: ["Datos para Transferencia", "¿Cómo es el envío Andreani?", "Ver catálogo completo"]
     };
@@ -2042,7 +2042,7 @@ function generateAIResponse(rawQuery) {
   // 27. Catálogo General y Colecciones
   if (['catalogo', 'coleccion', 'colecciones', 'que tienen', 'productos', 'piezas', 'modelos', 'ver todo'].some(k => norm.includes(k))) {
     return {
-      text: `En **ÁUREA Atelier** forjamos cuatro grandes colecciones de autor:\n\n• **Anillos & Solitarios:** Diseños en Oro 18K y Plata 925 con diamantes cultivados o siluetas puras.\n• **Gargantillas & Collares:** Cadenas de eslabón fino y solitarios colgantes regulables.\n• **Aros Criollos:** Argollas macizas con cierres antialérgicos reforzados.\n• **Pulseras & Rivières:** Brazaletes rígidos y líneas rivière con engaste continuo.\n\nAquí tenés algunas de nuestras piezas más aclamadas para inspeccionar o sumar a tu bolsa:`,
+      text: `En **GALILEA Atelier** forjamos cuatro grandes colecciones de autor:\n\n• **Anillos & Solitarios:** Diseños en Oro 18K y Plata 925 con diamantes cultivados o siluetas puras.\n• **Gargantillas & Collares:** Cadenas de eslabón fino y solitarios colgantes regulables.\n• **Aros Criollos:** Argollas macizas con cierres antialérgicos reforzados.\n• **Pulseras & Rivières:** Brazaletes rígidos y líneas rivière con engaste continuo.\n\nAquí tenés algunas de nuestras piezas más aclamadas para inspeccionar o sumar a tu bolsa:`,
       products: matched,
       suggestions: ["Ver Anillos y Solitarios", "Ver Aros Criollos", "Gargantillas y Collares"]
     };
@@ -2050,7 +2050,7 @@ function generateAIResponse(rawQuery) {
 
   // 28. Respuesta conversacional amplia y acogedora (evita insistencias rígidas)
   return {
-    text: `Con mucho gusto te asesoro. En **ÁUREA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:\n\n• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.\n• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.\n• **Medición y primer ajuste de talle 100% bonificado** en todo el país.\n• **Hasta 6 cuotas fijas sin interés** con tarjetas y 15% OFF por transferencia bancaria.\n\nPodés elegir alguna de las sugerencias rápidas debajo o consultarme sobre cualquier pieza, metal o detalle de compra.`,
+    text: `Con mucho gusto te asesoro. En **GALILEA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:\n\n• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.\n• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.\n• **Medición y primer ajuste de talle 100% bonificado** en todo el país.\n• **Hasta 6 cuotas fijas sin interés** con tarjetas y 15% OFF por transferencia bancaria.\n\nPodés elegir alguna de las sugerencias rápidas debajo o consultarme sobre cualquier pieza, metal o detalle de compra.`,
     products: matched,
     suggestions: ["Ver Anillos y Solitarios", "¿Cómo mido mi talle?", "Joyas en Oro 18K"]
   };

@@ -1,10 +1,10 @@
 /**
- * ÁUREA ATELIER - Panel Modular de Gestión (/admin)
+ * GALILEA ATELIER - Panel Modular de Gestión (/admin)
  * Control de Acceso, Roles (Operario vs Admin), Catálogo, Ofertas y Logística
  */
 
 const AdminState = {
-  token: localStorage.getItem('aurea_admin_token') || '',
+  token: localStorage.getItem('galilea_admin_token') || '',
   currentUser: null,
   activeModule: 'orders',
   orders: [],
@@ -114,7 +114,7 @@ function setupAuthForm() {
         if (data.success && data.token) {
           AdminState.token = data.token;
           AdminState.currentUser = data.user;
-          localStorage.setItem('aurea_admin_token', data.token);
+          localStorage.setItem('galilea_admin_token', data.token);
           showToast(`Bienvenido al Atelier, ${data.user.name}`);
           showDashboardView();
           initDashboard();
@@ -139,7 +139,7 @@ function fillLogin(email, password) {
 function logout() {
   AdminState.token = '';
   AdminState.currentUser = null;
-  localStorage.removeItem('aurea_admin_token');
+  localStorage.removeItem('galilea_admin_token');
   showLoginView();
 }
 
@@ -390,7 +390,7 @@ function openOrderDetailModal(orderId) {
   const overlay = document.getElementById('admin-modal-overlay');
   const container = document.getElementById('admin-modal-content');
   const cleanPhone = order.customer.phone.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${order.customer.name}, te contactamos de ÁUREA Atelier sobre tu orden ${order.id}.`)}`;
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${order.customer.name}, te contactamos de GALILEA Atelier sobre tu orden ${order.id}.`)}`;
 
   container.innerHTML = `
     <div class="admin-modal-card">

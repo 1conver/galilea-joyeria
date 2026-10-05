@@ -1,5 +1,5 @@
 """
-ai_advisor.py - Motor de Inteligencia Artificial para ÁUREA Atelier Joyería
+ai_advisor.py - Motor de Inteligencia Artificial para GALILEA Atelier Joyería
 Soporta proveedores de terceros (Google Gemini, OpenAI) y motor experto local especializado.
 Entrenado y adaptado para responder con rigor, calidez y precisión sobre todas las áreas del Atelier.
 """
@@ -11,7 +11,7 @@ import urllib.request
 import urllib.error
 
 # Prompt de Sistema para modelos LLM de terceros (Gemini / OpenAI)
-JEWELRY_SYSTEM_PROMPT = """Eres 'Áurea Concierge IA', la asesora virtual oficial de alta joyería y gemología de ÁUREA Atelier (Av. Alvear 1850, Ciudad Autónoma de Buenos Aires, Argentina).
+JEWELRY_SYSTEM_PROMPT = """Eres 'Galilea Concierge IA', la asesora virtual oficial de alta joyería y gemología de GALILEA Atelier (Av. Alvear 1850, Ciudad Autónoma de Buenos Aires, Argentina).
 
 MISIÓN:
 Guiar al cliente con máxima elegancia, empatía y conocimiento orfebre en su experiencia de compra, respondiendo con precisión a cualquier inquietud sobre la tienda, joyas, gemas, precios, formas de pago, envíos y visitas al taller.
@@ -21,7 +21,7 @@ DOMINIOS DE ASESORÍA:
 2. Metales nobles de ley: Oro 18K macizo (amarillo, blanco aleado con paladio, rosa) y Plata 925 de ley con acabado espejo antialérgico. Sin baños ni enchapados superficiales.
 3. Gemología ética: Diamantes cultivados (lab-grown) carbono neutro certificados IGI/GIA de pureza VVS1/VVS2 y color incoloro F-G; zafiros, esmeraldas y perlas.
 4. Medidas y Talles en Argentina: Sistema métrico de diámetro interno en milímetros (16.5 mm = Talle 12/13; 17.2 mm = Talle 14/15; 18.0 mm = Talle 17/18; 19.0 mm = Talle 20/21). Primer ajuste de talle 100% bonificado sin cargo.
-5. Beneficios comerciales: 3 y 6 cuotas fijas sin interés con todas las tarjetas bancarias mediante Mercado Pago; 15% de descuento directo por Transferencia Bancaria (Alias: AUREA.JOYAS.ARG).
+5. Beneficios comerciales: 3 y 6 cuotas fijas sin interés con todas las tarjetas bancarias mediante Mercado Pago; 15% de descuento directo por Transferencia Bancaria (Alias: GALILEA.JOYAS.ARG).
 6. Envíos y Packaging: Envío gratis asegurado a toda la Argentina por Andreani Custodia Express (24-48h CABA/GBA, 3-5 días interior). Packaging de gala en caja rígida de lino, lazo de satén y certificado de autenticidad.
 7. Atención personalizada y taller: Atelier en Av. Alvear 1850, Buenos Aires. Visitas con cita previa y contacto humano por WhatsApp al +54 9 11 4050-9988.
 8. Garantía y cuidado: Garantía perpetua sobre la ley de los metales; servicio de pulido y revisión anual sin cargo de por vida.
@@ -29,7 +29,7 @@ DOMINIOS DE ASESORÍA:
 GUARDRAIL ESTRICTO:
 Si el usuario consulta sobre temas completamente ajenos a la joyería (fútbol, programación, política, cocina, matemática, religión, etc.):
 Responde con cortesía y elegancia:
-'Disculpas, como asesora de ÁUREA Atelier estoy capacitada para orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier. ¿En qué joya o momento especial puedo ayudarte?'
+'Disculpas, como asesora de GALILEA Atelier estoy capacitada para orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier. ¿En qué joya o momento especial puedo ayudarte?'
 
 Tono: Distinguido, empático, conocedor de la orfebrería. Utiliza castellano rioplatense elegante ('podés', 'contamos', 'te ofrecemos'). Usa formato Markdown (**negritas**, viñetas •) para una lectura ágil.
 """
@@ -56,7 +56,7 @@ JEWELRY_CONTEXT_WORDS = [
     'precio', 'precios', 'cuanto sale', 'cuanto cuesta', 'costo', 'costos', 'presupuesto', 'barato', 'accesible', 'caro', 'exclusivo',
     'pago', 'pagos', 'cuota', 'cuotas', 'tarjeta', 'tarjetas', 'mercado pago', 'mercadopago', 'transferencia', 'descuento', '15%', 'banco',
     'envio', 'envios', 'andreani', 'tiempo', 'demora', 'entrega', 'despacho', 'retiro',
-    'taller', 'atelier', 'alvear', 'aurea', 'direccion', 'donde estan', 'donde queda', 'visitar', 'cita', 'horario', 'local', 'tienda',
+    'taller', 'atelier', 'alvear', 'galilea', 'direccion', 'donde estan', 'donde queda', 'visitar', 'cita', 'horario', 'local', 'tienda',
     'regalo', 'regalos', 'aniversario', 'compromiso', 'casamiento', 'boda', 'novia', 'mama', 'esposa',
     'limpieza', 'limpiar', 'cuidado', 'mantenimiento', 'garantia', 'certificado', 'autenticidad', 'pulido',
     'personalizado', 'personalizados', 'a medida', 'grabar', 'grabado', 'stock', 'como compro', 'contacto', 'whatsapp',
@@ -244,7 +244,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if is_off_topic(raw_query):
         return {
             "reply": (
-                "Disculpas, como asesora de **ÁUREA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
+                "Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
                 "metales nobles, gemología, talles y compras en el atelier.<br><br>"
                 "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés."
             ),
@@ -257,7 +257,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['hola', 'buen dia', 'buenas tardes', 'buenas noches', 'que tal', 'como estas', 'buenas']) and len(norm.split()) <= 4:
         return {
             "reply": (
-                "¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **ÁUREA Atelier**.<br><br>"
+                "¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **GALILEA Atelier**.<br><br>"
                 "Soy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, "
                 "ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas fijas sin interés** y envíos asegurados por Andreani.<br><br>"
                 "¿Te gustaría explorar alguna colección en particular?"
@@ -279,10 +279,10 @@ def generate_local_response(raw_query: str, products: list) -> dict:
         }
 
     # 4. Quiénes son / Sobre la marca / Historia
-    if any(k in norm for k in ['quienes son', 'quien sos', 'sobre ustedes', 'marca aurea', 'historia', 'que es aurea']):
+    if any(k in norm for k in ['quienes son', 'quien sos', 'sobre ustedes', 'marca galilea', 'historia', 'que es galilea']):
         return {
             "reply": (
-                "**ÁUREA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.<br><br>"
+                "**GALILEA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.<br><br>"
                 "• **Nobleza Material:** Forjamos alianzas, solitarios, gargantillas y pulseras exclusivamente en metales nobles genuinos (Oro 18K y Plata 925 de ley) sin baños ni enchapados superficiales.<br>"
                 "• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.<br>"
                 "• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo."
@@ -309,7 +309,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['garantia', 'certificado', 'autenticidad', 'original', 'calidad', 'reparar', 'reparacion', 'mantenimiento', 'pulido']):
         return {
             "reply": (
-                "En **ÁUREA Atelier** respaldamos cada obra con los más altos estándares de orfebrería:<br><br>"
+                "En **GALILEA Atelier** respaldamos cada obra con los más altos estándares de orfebrería:<br><br>"
                 "• **Garantía Perpetua:** Avalamos de por vida la nobleza y ley de nuestros metales (Oro 18K y Plata 925).<br>"
                 "• **Certificado de Autenticidad Foliado:** Cada pieza incluye especificación de aleación, gramaje y graduación de gemas.<br>"
                 "• **Primer Ajuste de Talle Bonificado:** Si el anillo no te calza a la perfección, lo ajustamos sin cargo con retiro y entrega asegurada.<br>"
@@ -323,7 +323,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['cambio', 'cambios', 'devolucion', 'devoluciones', 'si no me gusta', 'si no le queda', 'si me equivoque', 'politica de cambio']):
         return {
             "reply": (
-                "Comprar en ÁUREA es 100% libre de riesgos:<br><br>"
+                "Comprar en GALILEA es 100% libre de riesgos:<br><br>"
                 "• **Plazo de Cambio:** Disponés de **30 días corridos** desde la recepción de tu joya para solicitar un cambio de modelo o medida.<br>"
                 "• **Primer Ajuste Bonificado:** Si elegiste un anillo y el talle necesita modificación, el primer ajuste es **100% gratuito** con retiro y entrega asegurada a domicilio.<br>"
                 "• **Procedimiento Simple:** Nos contactás por WhatsApp o mail y Andreani retira el paquete asegurado por tu domicilio sin complicaciones."
@@ -336,7 +336,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['como compro', 'como es el proceso', 'pasos para comprar', 'como pago', 'hacer pedido', 'agregar al carrito', 'como hacer la compra', 'como encargar']):
         return {
             "reply": (
-                "Comprar en ÁUREA es ágil, seguro y transparente:<br><br>"
+                "Comprar en GALILEA es ágil, seguro y transparente:<br><br>"
                 "1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.<br>"
                 "2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.<br>"
                 "3. **Elegí tu beneficio de pago:** Hasta **6 cuotas fijas sin interés** con tarjetas vía Mercado Pago o **15% OFF directo** por Transferencia Bancaria.<br>"
@@ -352,7 +352,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:<br><br>"
                 "• **WhatsApp Directo:** [+54 9 11 4050-9988](https://wa.me/5491140509988) (Atención personalizada de lunes a sábados).<br>"
-                "• **Correo Institucional:** atelier@aurea-joyeria.com<br>"
+                "• **Correo Institucional:** atelier@galilea-joyeria.com<br>"
                 "• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.<br><br>"
                 "Haciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana."
             ),
@@ -383,7 +383,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
                 "• **17.2 mm** = Talle 14 / 15 *(estándar femenino más frecuente)*<br>"
                 "• **18.0 mm** = Talle 17 / 18<br>"
                 "• **19.0 mm** = Talle 20 / 21<br><br>"
-                "**Tranquilidad Áurea:** Todas nuestras piezas cuentan con el **primer ajuste de talle 100% bonificado sin cargo**, "
+                "**Tranquilidad Galilea:** Todas nuestras piezas cuentan con el **primer ajuste de talle 100% bonificado sin cargo**, "
                 "incluyendo retiro y entrega asegurada en tu domicilio."
             ),
             "products": match_products('anillos', products),
@@ -409,7 +409,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "Existe una diferencia radical entre un circón y un diamante cultivado:<br><br>"
                 "• **Circón o Zirconia:** Es una gema sintética blanda de laboratorio (óxido de circonio) que se desgasta, raya y pierde su brillo o se vuelve lechosa con el roce y el agua en pocos meses.<br>"
-                "• **Diamante Cultivado Áurea:** Es un **diamante auténtico** en su física, química y óptica (100% carbono puro cristalizado con dureza 10 Mohs). Brilla eternamente, no se raya y viene con certificación gemológica oficial."
+                "• **Diamante Cultivado Galilea:** Es un **diamante auténtico** en su física, química y óptica (100% carbono puro cristalizado con dureza 10 Mohs). Brilla eternamente, no se raya y viene con certificación gemológica oficial."
             ),
             "products": match_products('diamantes', products),
             "suggestions": ["Ver joyas con Diamantes", "Certificación VVS", "Consultar por WhatsApp"]
@@ -496,7 +496,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['oro', 'plata', 'metal', 'metales', '18k', '925', 'blanco', 'rosa', 'amarillo', 'despinta', 'enchapado', 'macizo', 'rodio']):
         return {
             "reply": (
-                "En **ÁUREA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:<br><br>"
+                "En **GALILEA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:<br><br>"
                 "• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.<br>"
                 "• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.<br>"
                 "• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo antialérgico.<br><br>"
@@ -523,8 +523,8 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['descuento', 'descuentos', 'promocion', 'promociones', 'promo', 'promos', 'oferta', 'ofertas', 'cupon', '15%']):
         return {
             "reply": (
-                "En **ÁUREA Atelier** disponemos de importantes beneficios comerciales vigentes:<br><br>"
-                "• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: `AUREA.JOYAS.ARG`).<br>"
+                "En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:<br><br>"
+                "• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: `GALILEA.JOYAS.ARG`).<br>"
                 "• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.<br>"
                 "• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express."
             ),
@@ -566,7 +566,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "Contamos con los siguientes beneficios comerciales en toda la Argentina:<br><br>"
                 "• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.<br>"
-                "• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: `AUREA.JOYAS.ARG`).<br>"
+                "• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: `GALILEA.JOYAS.ARG`).<br>"
                 "• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits."
             ),
             "products": matched,
@@ -590,7 +590,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['catalogo', 'coleccion', 'colecciones', 'que tienen', 'productos', 'piezas', 'modelos', 'ver todo']):
         return {
             "reply": (
-                "En **ÁUREA Atelier** forjamos cuatro grandes colecciones de autor:<br><br>"
+                "En **GALILEA Atelier** forjamos cuatro grandes colecciones de autor:<br><br>"
                 "• **Anillos & Solitarios:** Diseños en Oro 18K y Plata 925 con diamantes cultivados o siluetas puras.<br>"
                 "• **Gargantillas & Collares:** Cadenas de eslabón fino y solitarios colgantes regulables.<br>"
                 "• **Aros Criollos:** Argollas macizas con cierres antialérgicos reforzados.<br>"
@@ -604,7 +604,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     # 28. Respuesta conversacional amplia y acogedora (evita insistencias rígidas)
     return {
         "reply": (
-            "Con mucho gusto te asesoro. En **ÁUREA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:<br><br>"
+            "Con mucho gusto te asesoro. En **GALILEA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:<br><br>"
             "• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.<br>"
             "• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.<br>"
             "• **Medición y primer ajuste de talle 100% bonificado** en todo el país.<br>"
@@ -639,13 +639,13 @@ def process_chat_message(message: str, history: list = None, products: list = No
         return {
             "success": True,
             "reply": (
-                "Disculpas, como asesora de **ÁUREA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
+                "Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
                 "metales nobles, gemología, talles y compras en el atelier.<br><br>"
                 "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés."
             ),
             "products": [],
             "suggestions": ["¿Cómo elijo mi talle de anillo?", "Ver joyas en Oro 18K", "Promociones y Cuotas"],
-            "provider": "aurea-guardrail",
+            "provider": "galilea-guardrail",
             "guardrail_triggered": True
         }
 
@@ -681,12 +681,12 @@ def process_chat_message(message: str, history: list = None, products: list = No
         except Exception as e:
             print(f"Aviso OpenAI API: {e}")
 
-    # Motor experto local de Joyería ÁUREA
+    # Motor experto local de Joyería GALILEA
     local_res = generate_local_response(clean_msg, products)
     return {
         "success": True,
         "reply": local_res["reply"],
         "products": local_res.get("products", match_products(clean_msg, products)),
         "suggestions": local_res.get("suggestions", ["Ver Anillos y Solitarios", "¿Cómo mido mi talle?", "Joyas en Oro 18K"]),
-        "provider": "aurea-expert-engine"
+        "provider": "galilea-expert-engine"
     }

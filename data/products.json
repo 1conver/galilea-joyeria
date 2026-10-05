@@ -1,6 +1,6 @@
 [
   {
-    "id": "aurea-01",
+    "id": "galilea-01",
     "name": "Anillo Sello Ondulado",
     "category": "anillos",
     "category_label": "Anillos",
@@ -22,7 +22,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-02",
+    "id": "galilea-02",
     "name": "Gargantilla Étoile Solitario",
     "category": "collares",
     "category_label": "Collares",
@@ -44,7 +44,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-03",
+    "id": "galilea-03",
     "name": "Aros Criollos Sculpt",
     "category": "aros",
     "category_label": "Aros",
@@ -66,7 +66,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-04",
+    "id": "galilea-04",
     "name": "Pulsera Rivière Tenis",
     "category": "pulseras",
     "category_label": "Pulseras",
@@ -88,7 +88,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-05",
+    "id": "galilea-05",
     "name": "Collar Medallón Solar",
     "category": "collares",
     "category_label": "Collares",
@@ -110,7 +110,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-06",
+    "id": "galilea-06",
     "name": "Anillo Dual Prisma",
     "category": "anillos",
     "category_label": "Anillos",
@@ -132,7 +132,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-07",
+    "id": "galilea-07",
     "name": "Aros Gota de Lluvia",
     "category": "aros",
     "category_label": "Aros",
@@ -154,7 +154,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-08",
+    "id": "galilea-08",
     "name": "Brazalete Rígido Brume",
     "category": "pulseras",
     "category_label": "Pulseras",
@@ -176,7 +176,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-09",
+    "id": "galilea-09",
     "name": "Alianza Facetada Cincel",
     "category": "anillos",
     "category_label": "Anillos",
@@ -198,7 +198,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-10",
+    "id": "galilea-10",
     "name": "Cadena Veneciana de Oro",
     "category": "collares",
     "category_label": "Collares",
@@ -220,7 +220,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-11",
+    "id": "galilea-11",
     "name": "Solitario Halo Imperial Diamante",
     "category": "diamantes",
     "category_label": "Alta Joyería",
@@ -242,7 +242,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-12",
+    "id": "galilea-12",
     "name": "Earcuffs Constelación Pavé",
     "category": "diamantes",
     "category_label": "Alta Joyería",
@@ -264,7 +264,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-13",
+    "id": "galilea-13",
     "name": "Anillo Escultura Marea",
     "category": "limitada",
     "category_label": "Edición Limitada",
@@ -286,7 +286,7 @@
     "in_stock": true
   },
   {
-    "id": "aurea-14",
+    "id": "galilea-14",
     "name": "Collar Medallón Eclipse",
     "category": "limitada",
     "category_label": "Edición Limitada",

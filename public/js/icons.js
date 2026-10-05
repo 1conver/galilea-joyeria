@@ -1,5 +1,5 @@
 /**
- * ÁUREA Atelier - Sistema de Iconografía Vectorial Minimalista
+ * GALILEA Atelier - Sistema de Iconografía Vectorial Minimalista
  * 100% SVG nativo, libre de emojis, con trazos finos de 1.2px a 1.5px.
  */
 
