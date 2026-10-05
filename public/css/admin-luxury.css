@@ -131,32 +131,7 @@ body.admin-body {
   margin-bottom: 2rem;
 }
 
-.demo-credentials-strip {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 1.8rem;
-  flex-wrap: wrap;
-}
 
-.demo-chip-btn {
-  font-size: 0.7rem;
-  padding: 0.35rem 0.8rem;
-  background: var(--admin-subtle);
-  border: 1px solid var(--admin-rose-border);
-  border-radius: 9999px;
-  color: var(--admin-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.demo-chip-btn:hover {
-  background: #FFFFFF;
-  border-color: var(--admin-rose-primary);
-  color: var(--admin-rose-deep);
-  transform: translateY(-1px);
-}
 
 /* --------------------------------------------------------------------------
    2. TOPBAR & ENCABEZADO MODULAR

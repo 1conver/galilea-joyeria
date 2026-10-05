@@ -557,7 +557,7 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       if (val && previewImg) {
         previewImg.src = val;
         previewImg.style.display = 'block';
-        if (statusEl) statusEl.innerHTML = `<span style="color: #205C33; font-weight: 600;">✓ Imagen vinculada por URL</span>`;
+        if (statusEl) statusEl.innerHTML = `<span style="color: #205C33; font-weight: 600;">Imagen vinculada por URL</span>`;
       }
     });
   }
@@ -575,7 +575,7 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       previewImg.style.display = 'block';
     }
     if (statusEl) {
-      statusEl.innerHTML = `<span style="color: var(--admin-rose-primary); font-weight: 600;">⏳ Guardando archivo en servidor local...</span>`;
+      statusEl.innerHTML = `<span style="color: var(--admin-rose-primary); font-weight: 600;">Guardando archivo en servidor local...</span>`;
     }
 
     try {
@@ -583,12 +583,12 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       if (urlInput) urlInput.value = localUrl;
       if (previewImg) previewImg.src = localUrl;
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #205C33; font-weight: 700;">✓ Archivo local guardado: ${file.name}</span>`;
+        statusEl.innerHTML = `<span style="color: #205C33; font-weight: 700;">Archivo local guardado: ${file.name}</span>`;
       }
       showToast(`Foto '${file.name}' guardada en local`);
     } catch (err) {
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #962332; font-weight: 600;">✕ Error al guardar: ${err.message}</span>`;
+        statusEl.innerHTML = `<span style="color: #962332; font-weight: 600;">Error al guardar: ${err.message}</span>`;
       }
       showToast('Error al procesar la foto');
     }
@@ -711,7 +711,7 @@ function renderCatalogTable() {
       </td>
       <td>
         <button class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}" style="cursor: pointer; border: none;" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})">
-          <span>${prod.in_stock ? '● En Stock' : '✕ Agotado'}</span>
+          <span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span>
         </button>
       </td>
       <td style="text-align: right;">
@@ -838,8 +838,8 @@ function openCreateProductModal() {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
             <label class="form-label" style="margin: 0;">Fotografía Principal (Portada de la Joya)</label>
             <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="new-pri-tab-local" onclick="toggleUploadTab('new-pri', 'local')">📁 Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="new-pri-tab-url" onclick="toggleUploadTab('new-pri', 'url')">🔗 Enlace URL</button>
+              <button type="button" class="upload-tab-btn active" id="new-pri-tab-local" onclick="toggleUploadTab('new-pri', 'local')">Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="new-pri-tab-url" onclick="toggleUploadTab('new-pri', 'url')">Enlace URL</button>
             </div>
           </div>
 
@@ -865,7 +865,7 @@ function openCreateProductModal() {
             <img src="${defaultImg}" id="new-pri-preview" class="image-live-preview-img" alt="Vista previa principal">
             <div class="image-preview-info">
               <div class="image-preview-filename">Foto de Portada</div>
-              <div id="new-pri-status" class="image-preview-status">✓ Lista para incorporar</div>
+              <div id="new-pri-status" class="image-preview-status">Lista para incorporar</div>
             </div>
           </div>
         </div>
@@ -875,8 +875,8 @@ function openCreateProductModal() {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
             <label class="form-label" style="margin: 0;">Fotografía Secundaria (Detalle o puesta en modelo)</label>
             <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="new-sec-tab-local" onclick="toggleUploadTab('new-sec', 'local')">📁 Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="new-sec-tab-url" onclick="toggleUploadTab('new-sec', 'url')">🔗 Enlace URL</button>
+              <button type="button" class="upload-tab-btn active" id="new-sec-tab-local" onclick="toggleUploadTab('new-sec', 'local')">Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="new-sec-tab-url" onclick="toggleUploadTab('new-sec', 'url')">Enlace URL</button>
             </div>
           </div>
 
@@ -899,7 +899,7 @@ function openCreateProductModal() {
             <img src="${defaultSecImg}" id="new-sec-preview" class="image-live-preview-img" alt="Vista previa secundaria">
             <div class="image-preview-info">
               <div class="image-preview-filename">Foto de Detalle / Ángulo Secundario</div>
-              <div id="new-sec-status" class="image-preview-status">✓ Lista</div>
+              <div id="new-sec-status" class="image-preview-status">Lista</div>
             </div>
           </div>
         </div>
@@ -1004,8 +1004,8 @@ function openEditProductModal(productId) {
               Fotografía Principal (Portada)
             </strong>
             <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="edit-pri-tab-local" onclick="toggleUploadTab('edit-pri', 'local')">📁 Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="edit-pri-tab-url" onclick="toggleUploadTab('edit-pri', 'url')">🔗 Enlace URL</button>
+              <button type="button" class="upload-tab-btn active" id="edit-pri-tab-local" onclick="toggleUploadTab('edit-pri', 'local')">Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="edit-pri-tab-url" onclick="toggleUploadTab('edit-pri', 'url')">Enlace URL</button>
             </div>
           </div>
 
@@ -1028,7 +1028,7 @@ function openEditProductModal(productId) {
             <img src="${currentPriImg}" id="edit-pri-preview" class="image-live-preview-img" alt="Foto principal">
             <div class="image-preview-info">
               <div class="image-preview-filename">Foto Principal Activa</div>
-              <div id="edit-pri-status" class="image-preview-status">✓ En uso en el catálogo</div>
+              <div id="edit-pri-status" class="image-preview-status">En uso en el catálogo</div>
             </div>
           </div>
         </div>
@@ -1040,8 +1040,8 @@ function openEditProductModal(productId) {
               Fotografía Secundaria (Detalle o puesta en cuerpo)
             </strong>
             <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="edit-sec-tab-local" onclick="toggleUploadTab('edit-sec', 'local')">📁 Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="edit-sec-tab-url" onclick="toggleUploadTab('edit-sec', 'url')">🔗 Enlace URL</button>
+              <button type="button" class="upload-tab-btn active" id="edit-sec-tab-local" onclick="toggleUploadTab('edit-sec', 'local')">Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="edit-sec-tab-url" onclick="toggleUploadTab('edit-sec', 'url')">Enlace URL</button>
             </div>
           </div>
 
@@ -1064,7 +1064,7 @@ function openEditProductModal(productId) {
             <img src="${currentSecImg || 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85'}" id="edit-sec-preview" class="image-live-preview-img" alt="Foto secundaria">
             <div class="image-preview-info">
               <div class="image-preview-filename">Foto Secundaria</div>
-              <div id="edit-sec-status" class="image-preview-status">${currentSecImg ? '✓ Activa' : 'Opcional (sin foto aún)'}</div>
+              <div id="edit-sec-status" class="image-preview-status">${currentSecImg ? 'Activa' : 'Opcional (sin foto aún)'}</div>
             </div>
           </div>
         </div>
@@ -1412,7 +1412,7 @@ function showToast(message) {
   }
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.innerHTML = `<span>${window.ICONS.check || '✓'}</span><span>${message}</span>`;
+  toast.innerHTML = `<span>${window.ICONS.check || ''}</span><span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
