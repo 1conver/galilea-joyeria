@@ -26,6 +26,14 @@ except Exception:
     except Exception:
         process_chat_message = None
 
+try:
+    import payments
+except Exception:
+    try:
+        from api import payments
+    except Exception:
+        payments = None
+
 
 def load_data(filename, default_val=None):
     if default_val is None:
@@ -265,15 +273,49 @@ class handler(BaseHTTPRequestHandler):
 
         # POST /api/checkout/preference
         if path == "/api/checkout/preference":
-            order_id = f"GAL-MP-{uuid.uuid4().hex[:8].upper()}"
-            sim_pref_id = f"MP-{uuid.uuid4().hex[:12].upper()}"
-            self._set_headers(200)
-            self.wfile.write(json.dumps({
-                "success": True,
-                "order_id": order_id,
-                "preference_id": sim_pref_id,
-                "message": "Cobro autenticado vía Mercado Pago."
-            }).encode('utf-8'))
+            try:
+                products = load_data("products.json", [])
+                def add_order_callback(ord_data):
+                    return ord_data
+
+                if payments:
+                    result = payments.create_preference(body, products, add_order_callback)
+                else:
+                    order_id = f"GAL-MP-{uuid.uuid4().hex[:8].upper()}"
+                    result = {
+                        "success": True,
+                        "mode": "sandbox",
+                        "order_id": order_id,
+                        "init_point": f"/?checkout=sandbox&order={order_id}",
+                        "message": "Sin módulo payments: orden pendiente."
+                    }
+                self._set_headers(200)
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            except ValueError as ve:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"success": False, "error": str(ve)}).encode('utf-8'))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+            return
+
+        # POST /api/checkout/webhook
+        if path == "/api/checkout/webhook":
+            try:
+                if payments:
+                    query_dict = {k: v[0] for k, v in qs.items()}
+                    headers_dict = {k: v for k, v in self.headers.items()}
+                    def get_orders(): return load_data("orders.json", [])
+                    def save_orders_dummy(o): pass
+                    code, out = payments.process_webhook(query_dict, body, headers_dict, get_orders, save_orders_dummy)
+                    self._set_headers(code)
+                    self.wfile.write(json.dumps(out).encode('utf-8'))
+                else:
+                    self._set_headers(200)
+                    self.wfile.write(json.dumps({"ignored": True}).encode('utf-8'))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
             return
 
         # POST /api/checkout/bank-transfer

@@ -913,12 +913,22 @@ async function handleMercadoPagoCheckout() {
     const result = await res.json();
 
     if (result.success) {
+      if (result.init_point && result.mode === 'live') {
+        showToast('Redirigiendo a Mercado Pago para abonar de forma segura...');
+        clearCart();
+        setTimeout(() => {
+          window.location.href = result.init_point;
+        }, 600);
+        return;
+      }
+
       // Mostrar confirmación interactiva
       renderPaymentSuccess({
         type: 'mercadopago',
         order_id: result.order_id,
         preference_id: result.preference_id,
         mode: result.mode,
+        init_point: result.init_point,
         message: result.message || 'Preferencia de Mercado Pago lista.',
         total: payload.items.reduce((a, b) => a + (b.unit_price * b.quantity), 0)
       });
@@ -1052,6 +1062,13 @@ function renderPaymentSuccess(data) {
           <span style="color: var(--text-muted);">Financiación:</span>
           <span style="color: var(--status-success); font-weight: 600;">Hasta 6 Cuotas Bancarias</span>
         </div>
+        ${data.init_point ? `
+          <div style="margin-top: 1.2rem;">
+            <a href="${data.init_point}" class="btn-luxury" style="width: 100%; justify-content: center; text-decoration: none;" id="btn-open-mp-gateway">
+              <span>Abrir Pasarela de Pago Mercado Pago</span>
+            </a>
+          </div>
+        ` : ''}
       </div>
     `;
   } else if (data.type === 'card') {

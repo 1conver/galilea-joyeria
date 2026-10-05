@@ -9,8 +9,28 @@ STATUS = {"approved": "Pago aprobado", "pending": "Pago pendiente", "in_process"
           "rejected": "Pago rechazado", "cancelled": "Pago cancelado", "refunded": "Pago reembolsado",
           "charged_back": "Contracargo"}
 
-def token(): return os.environ.get("MERCADOPAGO_ACCESS_TOKEN", "").strip()
-def site_url(): return os.environ.get("SITE_URL", "http://localhost:3000").rstrip("/")
+def token():
+    # 1. Variable de entorno en producción (Vercel o local)
+    t = os.environ.get("MERCADOPAGO_ACCESS_TOKEN", "").strip()
+    if t:
+        return t
+    # 2. Respaldo en data/settings.json
+    try:
+        settings_path = os.path.join(os.path.dirname(__file__), "data", "settings.json")
+        if os.path.exists(settings_path):
+            with open(settings_path, "r", encoding="utf-8") as f:
+                s = json.load(f)
+                return str(s.get("mercadopago_access_token", "")).strip()
+    except Exception:
+        pass
+    return ""
+
+def site_url():
+    if os.environ.get("SITE_URL"):
+        return os.environ.get("SITE_URL").rstrip("/")
+    if os.environ.get("VERCEL_URL"):
+        return f"https://{os.environ.get('VERCEL_URL')}".rstrip("/")
+    return "https://galilea-joyeria.vercel.app"
 
 def _mp(method, path, body=None):
     req = urllib.request.Request(MP_API + path, method=method,
@@ -53,14 +73,28 @@ def create_preference(data, products, add_order):
                 "init_point": f"/?checkout=sandbox&order={order_id}",
                 "message": "Sin MERCADOPAGO_ACCESS_TOKEN: orden creada como pendiente."}
     s = site_url()
-    pref = _mp("POST", "/checkout/preferences", {
-        "items": [{"id": l["id"], "title": l["name"], "quantity": l["quantity"],
-                   "unit_price": l["price"], "currency_id": "ARS"} for l in lines],
-        "payer": {"name": payer.get("name", ""), "email": payer.get("email", "")},
-        "external_reference": order_id, "statement_descriptor": "GALILEA",
+    pref_payload = {
+        "items": [{
+            "id": str(l["id"]),
+            "title": f"GALILEA - {l['name']}",
+            "quantity": int(l["quantity"]),
+            "unit_price": float(l["price"]),
+            "currency_id": "ARS"
+        } for l in lines],
+        "payer": {
+            "name": str(payer.get("name", "")).strip() or "Cliente Galilea",
+            "email": str(payer.get("email", "")).strip() or "cliente@galilea-joyeria.com"
+        },
+        "external_reference": order_id,
+        "statement_descriptor": "GALILEA",
         "back_urls": {k: f"{s}/?checkout={k}&order={order_id}" for k in ("success", "pending", "failure")},
-        "auto_return": "approved", "notification_url": f"{s}/api/checkout/webhook",
-        "payment_methods": {"installments": 6}})
+        "auto_return": "approved",
+        "payment_methods": {"installments": 6}
+    }
+    if s.startswith("https://"):
+        pref_payload["notification_url"] = f"{s}/api/checkout/webhook"
+
+    pref = _mp("POST", "/checkout/preferences", pref_payload)
     return {"success": True, "mode": "live", "order_id": order_id, "total_ars": total,
             "preference_id": pref["id"], "init_point": pref["init_point"]}
 

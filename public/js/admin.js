@@ -235,10 +235,18 @@ function renderOrdersTable() {
   if (!tbody) return;
 
   if (AdminState.orders.length === 0) {
+    const isFiltered = AdminState.filterStatus !== 'all' || AdminState.filterShipping !== 'all' || AdminState.filterMethod !== 'all' || AdminState.searchQuery;
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-          No se encontraron pedidos con esos filtros.
+        <td colspan="7" style="text-align: center; padding: 4rem 1.5rem;">
+          <div style="max-width: 420px; margin: 0 auto; text-align: center;">
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--admin-text-primary); margin-bottom: 0.35rem;">
+              ${isFiltered ? 'No se encontraron pedidos con esos filtros' : 'No hay órdenes pendientes en taller ni despachos activos'}
+            </div>
+            <p style="font-size: 0.8rem; color: var(--admin-text-secondary); line-height: 1.5; margin: 0;">
+              ${isFiltered ? 'Probá restableciendo los filtros o el buscador para ver todas las órdenes.' : 'La bandeja se actualizará en tiempo real a medida que los clientes adquieran joyas en la tienda.'}
+            </p>
+          </div>
         </td>
       </tr>
     `;
@@ -1235,6 +1243,10 @@ async function fetchSettings() {
       document.getElementById('set-discount').value = s.transfer_discount_pct || 15;
       document.getElementById('set-hero-title').value = s.hero_title || '';
       document.getElementById('set-hero-desc').value = s.hero_desc || '';
+      const mpTokenInput = document.getElementById('set-mp-access-token');
+      if (mpTokenInput) mpTokenInput.value = s.mercadopago_access_token || '';
+      const mpPubInput = document.getElementById('set-mp-public-key');
+      if (mpPubInput) mpPubInput.value = s.mercadopago_public_key || '';
     }
   } catch (e) {
     console.error(e);
@@ -1251,7 +1263,9 @@ function setupSettingsForm() {
         hero_tag: document.getElementById('set-hero-tag').value,
         transfer_discount_pct: parseInt(document.getElementById('set-discount').value),
         hero_title: document.getElementById('set-hero-title').value,
-        hero_desc: document.getElementById('set-hero-desc').value
+        hero_desc: document.getElementById('set-hero-desc').value,
+        mercadopago_access_token: document.getElementById('set-mp-access-token') ? document.getElementById('set-mp-access-token').value.trim() : '',
+        mercadopago_public_key: document.getElementById('set-mp-public-key') ? document.getElementById('set-mp-public-key').value.trim() : ''
       };
 
       try {

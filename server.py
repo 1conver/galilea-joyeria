@@ -148,7 +148,7 @@ async def handle_update_settings(request):
         return web.json_response({"success": False, "error": "Datos inválidos"}, status=400)
 
     settings = load_settings()
-    for key in ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer_discount_pct", "atelier_address", "contact_phone"]:
+    for key in ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer_discount_pct", "atelier_address", "contact_phone", "mercadopago_access_token", "mercadopago_public_key"]:
         if key in data:
             settings[key] = data[key]
 
