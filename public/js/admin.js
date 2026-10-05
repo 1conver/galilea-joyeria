@@ -75,10 +75,12 @@ function showDashboardView() {
   const user = AdminState.currentUser;
   const nameEl = document.getElementById('header-user-name');
   const roleBadge = document.getElementById('header-role-badge');
+  const avatarEl = document.getElementById('header-user-avatar');
 
   if (nameEl) nameEl.textContent = user.name;
+  if (avatarEl && user.name) avatarEl.textContent = user.name.charAt(0).toUpperCase();
   if (roleBadge) {
-    roleBadge.textContent = user.role === 'admin' ? 'Administrador' : 'Operario de Taller';
+    roleBadge.textContent = user.role === 'admin' ? 'Admin' : 'Operario';
     roleBadge.className = `user-role-badge ${user.role === 'admin' ? 'role-admin' : 'role-operario'}`;
   }
 
@@ -459,8 +461,159 @@ function closeAdminModal() {
 }
 
 // =========================================================================
-// MÓDULO 2: CATÁLOGO & PRECIOS (SOLO ADMIN)
+// MÓDULO 2: CATÁLOGO & FOTOGRAFÍAS (SOLO ADMIN)
 // =========================================================================
+
+// --- UTILIDAD DE SUBIDA DE IMÁGENES EN LOCAL ---
+async function uploadImageFile(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${AdminState.token}`
+      },
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success && data.url) return data.url;
+    throw new Error(data.error || 'Error al subir archivo');
+  } catch (err) {
+    // Respaldo Base64 JSON
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const res = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${AdminState.token}`
+            },
+            body: JSON.stringify({ filename: file.name, data: reader.result })
+          });
+          const data = await res.json();
+          if (data.success && data.url) resolve(data.url);
+          else reject(new Error(data.error || 'Error al subir imagen'));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
+// Vinculación de zona Drag & Drop + Input File + Previsualización en Vivo
+function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId) {
+  const zone = document.getElementById(zoneId);
+  const fileInput = document.getElementById(fileInputId);
+  const urlInput = document.getElementById(urlInputId);
+  const previewImg = document.getElementById(previewImgId);
+  const statusEl = document.getElementById(statusId);
+
+  if (!zone || !fileInput) return;
+
+  zone.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+      fileInput.click();
+    }
+  });
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    zone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('dragover');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    zone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('dragover');
+    }, false);
+  });
+
+  zone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      processSelectedFile(dt.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processSelectedFile(e.target.files[0]);
+    }
+  });
+
+  if (urlInput) {
+    urlInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val && previewImg) {
+        previewImg.src = val;
+        previewImg.style.display = 'block';
+        if (statusEl) statusEl.innerHTML = `<span style="color: #205C33; font-weight: 600;">✓ Imagen vinculada por URL</span>`;
+      }
+    });
+  }
+
+  async function processSelectedFile(file) {
+    if (!file.type.startsWith('image/')) {
+      showToast('Por favor seleccioná una imagen válida (JPG, PNG, WebP)');
+      return;
+    }
+
+    // Previsualización instantánea local
+    const tempUrl = URL.createObjectURL(file);
+    if (previewImg) {
+      previewImg.src = tempUrl;
+      previewImg.style.display = 'block';
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<span style="color: var(--admin-rose-primary); font-weight: 600;">⏳ Guardando archivo en servidor local...</span>`;
+    }
+
+    try {
+      const localUrl = await uploadImageFile(file);
+      if (urlInput) urlInput.value = localUrl;
+      if (previewImg) previewImg.src = localUrl;
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color: #205C33; font-weight: 700;">✓ Archivo local guardado: ${file.name}</span>`;
+      }
+      showToast(`Foto '${file.name}' guardada en local`);
+    } catch (err) {
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color: #962332; font-weight: 600;">✕ Error al guardar: ${err.message}</span>`;
+      }
+      showToast('Error al procesar la foto');
+    }
+  }
+}
+
+// Alternar entre pestaña "Subir Archivo Local" y "Link URL"
+function toggleUploadTab(targetPrefix, mode) {
+  const localTabBtn = document.getElementById(`${targetPrefix}-tab-local`);
+  const urlTabBtn = document.getElementById(`${targetPrefix}-tab-url`);
+  const localPane = document.getElementById(`${targetPrefix}-pane-local`);
+  const urlPane = document.getElementById(`${targetPrefix}-pane-url`);
+
+  if (mode === 'local') {
+    if (localTabBtn) localTabBtn.classList.add('active');
+    if (urlTabBtn) urlTabBtn.classList.remove('active');
+    if (localPane) localPane.style.display = 'block';
+    if (urlPane) urlPane.style.display = 'none';
+  } else {
+    if (localTabBtn) localTabBtn.classList.remove('active');
+    if (urlTabBtn) urlTabBtn.classList.add('active');
+    if (localPane) localPane.style.display = 'none';
+    if (urlPane) urlPane.style.display = 'block';
+  }
+}
 
 async function fetchCatalog() {
   try {
@@ -477,36 +630,104 @@ async function fetchCatalog() {
 
 function renderCatalogTable() {
   const tbody = document.getElementById('catalog-table-body');
+  const counterEl = document.getElementById('catalog-total-counter');
   if (!tbody) return;
 
-  tbody.innerHTML = AdminState.products.map(prod => `
+  let prods = AdminState.products || [];
+
+  // Filtro de búsqueda
+  if (AdminState.catalogQuery) {
+    const q = AdminState.catalogQuery;
+    prods = prods.filter(p =>
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.id && p.id.toLowerCase().includes(q)) ||
+      (p.metal && p.metal.toLowerCase().includes(q)) ||
+      (p.category_label && p.category_label.toLowerCase().includes(q)) ||
+      (p.badge && p.badge.toLowerCase().includes(q))
+    );
+  }
+
+  // Filtro de categoría
+  if (AdminState.catalogCategory && AdminState.catalogCategory !== 'todos') {
+    if (AdminState.catalogCategory === 'diamantes') {
+      prods = prods.filter(p => p.category === 'diamantes' || (p.badge && p.badge.toLowerCase().includes('alta')) || p.price >= 400000);
+    } else if (AdminState.catalogCategory === 'limitada') {
+      prods = prods.filter(p => p.category === 'limitada' || (p.badge && p.badge.toLowerCase().includes('limitada')));
+    } else {
+      prods = prods.filter(p => p.category === AdminState.catalogCategory);
+    }
+  }
+
+  // Filtro de disponibilidad
+  if (AdminState.catalogStock === 'in_stock') {
+    prods = prods.filter(p => p.in_stock);
+  } else if (AdminState.catalogStock === 'out_of_stock') {
+    prods = prods.filter(p => !p.in_stock);
+  }
+
+  if (counterEl) {
+    counterEl.textContent = `${prods.length} ${prods.length === 1 ? 'joya' : 'joyas'} en catálogo`;
+  }
+
+  if (prods.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 3rem 1rem; color: var(--admin-text-muted);">
+          No se encontraron piezas en el catálogo con los filtros actuales.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = prods.map(prod => `
     <tr>
       <td>
         <div style="display: flex; align-items: center; gap: 1rem;">
-          <img src="${prod.primary_image}" alt="${prod.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 2px;">
+          <div style="position: relative; cursor: pointer;" onclick="openEditProductModal('${prod.id}')" title="Hacé clic para cambiar fotos o editar">
+            <img src="${prod.primary_image}" alt="${prod.name}" class="product-thumb-preview">
+            ${prod.secondary_image ? `<span style="position: absolute; bottom: -3px; right: -3px; background: #3A1822; color: #FFF; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 9999px; font-weight: 700;">+1</span>` : ''}
+          </div>
           <div>
-            <strong style="display: block; font-size: 0.95rem;">${prod.name}</strong>
-            <span style="font-size: 0.72rem; color: var(--gold-dark);">${prod.badge || ''}</span>
+            <strong style="display: block; font-size: 0.95rem; color: var(--admin-text-main); cursor: pointer;" onclick="openEditProductModal('${prod.id}')">
+              ${prod.name}
+            </strong>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+              <span style="font-size: 0.72rem; color: var(--admin-rose-deep); font-weight: 600;">${prod.badge || ''}</span>
+              <span style="font-size: 0.68rem; color: var(--admin-text-muted); font-family: monospace;">ID: ${prod.id}</span>
+            </div>
           </div>
         </div>
       </td>
       <td>
-        <div>${prod.category_label}</div>
-        <div style="font-size: 0.72rem; color: var(--text-muted);">${prod.metal}</div>
+        <div style="font-weight: 600;">${prod.category_label || prod.category}</div>
+        <div style="font-size: 0.72rem; color: var(--admin-text-muted); margin-top: 0.15rem;">${prod.metal}</div>
       </td>
       <td>
         <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <input type="number" id="price-input-${prod.id}" value="${prod.price}" class="form-input" style="width: 130px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
+          <input type="number" id="price-input-${prod.id}" value="${prod.price}" class="form-input" style="width: 125px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
           <button class="btn-op-action" onclick="saveProductPrice('${prod.id}')" title="Guardar Precio">Guardar</button>
         </div>
       </td>
       <td>
-        <button class="btn-op-action ${prod.in_stock ? 'btn-op-success' : ''}" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})">
-          <span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span>
+        <button class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}" style="cursor: pointer; border: none;" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})">
+          <span>${prod.in_stock ? '● En Stock' : '✕ Agotado'}</span>
         </button>
       </td>
-      <td>
-        <span style="font-size: 0.75rem; color: var(--text-muted);">ID: ${prod.id}</span>
+      <td style="text-align: right;">
+        <div class="table-action-btns" style="justify-content: flex-end;">
+          <button class="btn-op-action btn-op-photo" onclick="openEditProductModal('${prod.id}')" title="Cambiar Fotos y Datos">
+            ${window.ICONS.image || ''}
+            <span>Cambiar Fotos</span>
+          </button>
+          <button class="btn-op-action" onclick="openEditProductModal('${prod.id}')" title="Editar Detalles">
+            ${window.ICONS.edit || ''}
+            <span>Editar</span>
+          </button>
+          <button class="btn-op-action btn-op-danger" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\\'")}')" title="Eliminar del Catálogo">
+            ${window.ICONS.trash || ''}
+          </button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -557,22 +778,28 @@ async function toggleProductStock(id, inStock) {
   }
 }
 
+// --- MODAL DE DAR DE ALTA JOYA (SUBIDA LOCAL O LINK) ---
 function openCreateProductModal() {
   const overlay = document.getElementById('admin-modal-overlay');
   const container = document.getElementById('admin-modal-content');
 
+  const defaultImg = "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85";
+  const defaultSecImg = "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85";
+
   container.innerHTML = `
-    <div class="admin-modal-card" style="max-width: 600px;">
+    <div class="admin-modal-card" style="max-width: 680px;">
       <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
-      <h2 class="serif-font" style="font-size: 2rem; margin-bottom: 1.5rem;">Dar de Alta Nueva Joya</h2>
+      <h2 class="admin-modal-title">Dar de Alta Nueva Joya</h2>
+      <p class="admin-modal-subtitle">Podés subir las fotos directamente desde tu computadora o pegar un enlace web.</p>
 
       <form id="create-product-form" onsubmit="handleCreateProductSubmit(event)">
-        <div class="form-group" style="margin-bottom: 1rem;">
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
           <label class="form-label">Nombre de la Pieza</label>
-          <input type="text" id="new-prod-name" class="form-input" placeholder="Ej. Anillo Solitario Alvear" required>
+          <input type="text" id="new-prod-name" class="form-input" placeholder="Ej. Gargantilla Solitario Brilliante" required>
         </div>
 
-        <div class="form-row" style="margin-bottom: 1rem;">
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
             <label class="form-label">Categoría</label>
             <select id="new-prod-category" class="form-select">
@@ -580,6 +807,8 @@ function openCreateProductModal() {
               <option value="collares">Collares</option>
               <option value="aros">Aros</option>
               <option value="pulseras">Pulseras</option>
+              <option value="diamantes">Alta Joyería & Diamantes</option>
+              <option value="limitada">Edición Limitada</option>
             </select>
           </div>
           <div class="form-group">
@@ -588,50 +817,133 @@ function openCreateProductModal() {
               <option value="Oro 18K">Oro 18K Amarillo</option>
               <option value="Oro Blanco 18K">Oro Blanco 18K</option>
               <option value="Plata 925">Plata 925</option>
+              <option value="Plata 925 Bañada en Oro">Plata 925 Bañada en Oro 24K</option>
             </select>
           </div>
         </div>
 
-        <div class="form-row" style="margin-bottom: 1rem;">
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
             <label class="form-label">Precio en ARS ($)</label>
-            <input type="number" id="new-prod-price" class="form-input" placeholder="Ej. 350000" required>
+            <input type="number" id="new-prod-price" class="form-input" placeholder="Ej. 320000" min="100" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Etiqueta / Badge</label>
-            <input type="text" id="new-prod-badge" class="form-input" placeholder="Ej. Edición Limitada">
+            <label class="form-label">Etiqueta / Badge Promocional</label>
+            <input type="text" id="new-prod-badge" class="form-input" placeholder="Ej. Nuevo / Best Seller / Edición Limitada" value="Nuevo">
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">URL de Fotografía Principal</label>
-          <input type="url" id="new-prod-img" class="form-input" placeholder="https://images.unsplash.com/..." required value="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85">
+        <!-- FOTOGRAFÍA PRINCIPAL -->
+        <div style="background: #FFFDFD; border: 1px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <label class="form-label" style="margin: 0;">Fotografía Principal (Portada de la Joya)</label>
+            <div class="upload-method-tabs" style="margin: 0;">
+              <button type="button" class="upload-tab-btn active" id="new-pri-tab-local" onclick="toggleUploadTab('new-pri', 'local')">📁 Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="new-pri-tab-url" onclick="toggleUploadTab('new-pri', 'url')">🔗 Enlace URL</button>
+            </div>
+          </div>
+
+          <!-- Opción 1: Archivo local -->
+          <div id="new-pri-pane-local">
+            <div class="upload-zone-wrapper" id="new-pri-zone">
+              <input type="file" id="new-pri-file" accept="image/*" style="display: none;">
+              <div class="upload-zone-icon">
+                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
+              </div>
+              <div class="upload-zone-title">Hacé clic para elegir una foto o arrastrala acá</div>
+              <div class="upload-zone-desc">Formatos: JPG, PNG, WebP o AVIF (sin límites ajetreados)</div>
+            </div>
+          </div>
+
+          <!-- Opción 2: URL externa -->
+          <div id="new-pri-pane-url" style="display: none; margin-top: 0.6rem;">
+            <input type="url" id="new-prod-img" class="form-input" placeholder="https://..." value="${defaultImg}">
+          </div>
+
+          <!-- Preview & Estado -->
+          <div class="image-live-preview-box">
+            <img src="${defaultImg}" id="new-pri-preview" class="image-live-preview-img" alt="Vista previa principal">
+            <div class="image-preview-info">
+              <div class="image-preview-filename">Foto de Portada</div>
+              <div id="new-pri-status" class="image-preview-status">✓ Lista para incorporar</div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label">Descripción Editorial</label>
-          <textarea id="new-prod-desc" class="form-input" rows="3" placeholder="Detalles de manufactura artesanal..."></textarea>
+        <!-- FOTOGRAFÍA SECUNDARIA (OPCIONAL) -->
+        <div style="background: #FFFDFD; border: 1px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <label class="form-label" style="margin: 0;">Fotografía Secundaria (Detalle o puesta en modelo)</label>
+            <div class="upload-method-tabs" style="margin: 0;">
+              <button type="button" class="upload-tab-btn active" id="new-sec-tab-local" onclick="toggleUploadTab('new-sec', 'local')">📁 Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="new-sec-tab-url" onclick="toggleUploadTab('new-sec', 'url')">🔗 Enlace URL</button>
+            </div>
+          </div>
+
+          <div id="new-sec-pane-local">
+            <div class="upload-zone-wrapper" id="new-sec-zone">
+              <input type="file" id="new-sec-file" accept="image/*" style="display: none;">
+              <div class="upload-zone-icon">
+                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
+              </div>
+              <div class="upload-zone-title">Subir foto secundaria opcional</div>
+              <div class="upload-zone-desc">Se mostrará al pasar el cursor o en la galería detallada</div>
+            </div>
+          </div>
+
+          <div id="new-sec-pane-url" style="display: none; margin-top: 0.6rem;">
+            <input type="url" id="new-prod-sec-img" class="form-input" placeholder="https://..." value="${defaultSecImg}">
+          </div>
+
+          <div class="image-live-preview-box">
+            <img src="${defaultSecImg}" id="new-sec-preview" class="image-live-preview-img" alt="Vista previa secundaria">
+            <div class="image-preview-info">
+              <div class="image-preview-filename">Foto de Detalle / Ángulo Secundario</div>
+              <div id="new-sec-status" class="image-preview-status">✓ Lista</div>
+            </div>
+          </div>
         </div>
 
-        <button type="submit" class="btn-luxury" style="width: 100%;">
-          <span>Incorporar al Catálogo</span>
-        </button>
+        <div class="form-group" style="margin-bottom: 1.6rem;">
+          <label class="form-label">Descripción Editorial & Taller</label>
+          <textarea id="new-prod-desc" class="form-input" rows="3" placeholder="Detalles de manufactura artesanal, tipo de engaste, cierre o terminación..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.8rem; justify-content: flex-end;">
+          <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
+          <button type="submit" class="btn-luxury">
+            <span>Incorporar Joya al Catálogo</span>
+          </button>
+        </div>
       </form>
     </div>
   `;
+
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Configurar zonas de subida local
+  setTimeout(() => {
+    bindUploadZone('new-pri-zone', 'new-pri-file', 'new-prod-img', 'new-pri-preview', 'new-pri-status');
+    bindUploadZone('new-sec-zone', 'new-sec-file', 'new-prod-sec-img', 'new-sec-preview', 'new-sec-status');
+  }, 50);
 }
 
 async function handleCreateProductSubmit(e) {
   e.preventDefault();
-  const name = document.getElementById('new-prod-name').value;
+  const name = document.getElementById('new-prod-name').value.trim();
   const category = document.getElementById('new-prod-category').value;
   const metal = document.getElementById('new-prod-metal').value;
   const price = parseFloat(document.getElementById('new-prod-price').value);
-  const badge = document.getElementById('new-prod-badge').value;
-  const primary_image = document.getElementById('new-prod-img').value;
-  const description = document.getElementById('new-prod-desc').value;
+  const badge = document.getElementById('new-prod-badge').value.trim();
+  const primary_image = document.getElementById('new-prod-img').value.trim();
+  const secondary_image = document.getElementById('new-prod-sec-img') ? document.getElementById('new-prod-sec-img').value.trim() : '';
+  const description = document.getElementById('new-prod-desc').value.trim();
+
+  if (!name || price <= 0 || !primary_image) {
+    showToast('Por favor completá el nombre, precio y foto principal');
+    return;
+  }
 
   try {
     const res = await fetch('/api/admin/products', {
@@ -640,11 +952,11 @@ async function handleCreateProductSubmit(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AdminState.token}`
       },
-      body: JSON.stringify({ name, category, metal, price, badge, primary_image, description })
+      body: JSON.stringify({ name, category, metal, price, badge, primary_image, secondary_image, description })
     });
     const result = await res.json();
     if (result.success) {
-      showToast('Joya incorporada exitosamente');
+      showToast(`Joya '${name}' incorporada al catálogo`);
       closeAdminModal();
       fetchCatalog();
     } else {
@@ -654,6 +966,258 @@ async function handleCreateProductSubmit(e) {
     showToast('Error de conexión');
   }
 }
+
+// --- MODAL DE EDICIÓN DE JOYA Y CAMBIO DE FOTOS (SUBIDA LOCAL O LINK) ---
+function openEditProductModal(productId) {
+  const prod = (AdminState.products || []).find(p => p.id === productId);
+  if (!prod) return;
+
+  const overlay = document.getElementById('admin-modal-overlay');
+  const container = document.getElementById('admin-modal-content');
+
+  const currentPriImg = prod.primary_image || "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85";
+  const currentSecImg = prod.secondary_image || "";
+
+  container.innerHTML = `
+    <div class="admin-modal-card" style="max-width: 700px;">
+      <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
+      
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.2rem;">
+        <div>
+          <span style="font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--admin-rose-deep); font-weight: 700;">
+            Editor de Pieza & Fotos
+          </span>
+          <h2 class="admin-modal-title" style="margin-top: 0.2rem;">${prod.name}</h2>
+          <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">Código: ${prod.id}</div>
+        </div>
+        <span class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}">
+          ${prod.in_stock ? 'En Stock' : 'Agotado'}
+        </span>
+      </div>
+
+      <form id="edit-product-form" onsubmit="handleEditProductSubmit(event, '${prod.id}')">
+        
+        <!-- FOTOGRAFÍA PRINCIPAL ACTUAL + REEMPLAZO -->
+        <div style="background: #FFFDFD; border: 1.5px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <strong style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-main);">
+              Fotografía Principal (Portada)
+            </strong>
+            <div class="upload-method-tabs" style="margin: 0;">
+              <button type="button" class="upload-tab-btn active" id="edit-pri-tab-local" onclick="toggleUploadTab('edit-pri', 'local')">📁 Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="edit-pri-tab-url" onclick="toggleUploadTab('edit-pri', 'url')">🔗 Enlace URL</button>
+            </div>
+          </div>
+
+          <div id="edit-pri-pane-local">
+            <div class="upload-zone-wrapper" id="edit-pri-zone">
+              <input type="file" id="edit-pri-file" accept="image/*" style="display: none;">
+              <div class="upload-zone-icon">
+                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
+              </div>
+              <div class="upload-zone-title">Hacé clic para cambiar por un archivo de tu PC</div>
+              <div class="upload-zone-desc">O arrastrá una nueva foto directamente acá</div>
+            </div>
+          </div>
+
+          <div id="edit-pri-pane-url" style="display: none; margin-top: 0.6rem;">
+            <input type="url" id="edit-prod-img" class="form-input" placeholder="https://..." value="${currentPriImg}">
+          </div>
+
+          <div class="image-live-preview-box">
+            <img src="${currentPriImg}" id="edit-pri-preview" class="image-live-preview-img" alt="Foto principal">
+            <div class="image-preview-info">
+              <div class="image-preview-filename">Foto Principal Activa</div>
+              <div id="edit-pri-status" class="image-preview-status">✓ En uso en el catálogo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOTOGRAFÍA SECUNDARIA ACTUAL + REEMPLAZO -->
+        <div style="background: #FFFDFD; border: 1.5px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.4rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <strong style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-main);">
+              Fotografía Secundaria (Detalle o puesta en cuerpo)
+            </strong>
+            <div class="upload-method-tabs" style="margin: 0;">
+              <button type="button" class="upload-tab-btn active" id="edit-sec-tab-local" onclick="toggleUploadTab('edit-sec', 'local')">📁 Subir desde mi PC</button>
+              <button type="button" class="upload-tab-btn" id="edit-sec-tab-url" onclick="toggleUploadTab('edit-sec', 'url')">🔗 Enlace URL</button>
+            </div>
+          </div>
+
+          <div id="edit-sec-pane-local">
+            <div class="upload-zone-wrapper" id="edit-sec-zone">
+              <input type="file" id="edit-sec-file" accept="image/*" style="display: none;">
+              <div class="upload-zone-icon">
+                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
+              </div>
+              <div class="upload-zone-title">Subir o cambiar foto secundaria</div>
+              <div class="upload-zone-desc">Ideal para mostrar detalles de engaste o vista alternativa</div>
+            </div>
+          </div>
+
+          <div id="edit-sec-pane-url" style="display: none; margin-top: 0.6rem;">
+            <input type="url" id="edit-prod-sec-img" class="form-input" placeholder="https://..." value="${currentSecImg}">
+          </div>
+
+          <div class="image-live-preview-box">
+            <img src="${currentSecImg || 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85'}" id="edit-sec-preview" class="image-live-preview-img" alt="Foto secundaria">
+            <div class="image-preview-info">
+              <div class="image-preview-filename">Foto Secundaria</div>
+              <div id="edit-sec-status" class="image-preview-status">${currentSecImg ? '✓ Activa' : 'Opcional (sin foto aún)'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATOS EDITABLES DE LA JOYA -->
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label">Nombre de la Joya</label>
+          <input type="text" id="edit-prod-name" class="form-input" value="${prod.name || ''}" required>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <select id="edit-prod-category" class="form-select">
+              <option value="anillos" ${prod.category === 'anillos' ? 'selected' : ''}>Anillos</option>
+              <option value="collares" ${prod.category === 'collares' ? 'selected' : ''}>Collares</option>
+              <option value="aros" ${prod.category === 'aros' ? 'selected' : ''}>Aros</option>
+              <option value="pulseras" ${prod.category === 'pulseras' ? 'selected' : ''}>Pulseras</option>
+              <option value="diamantes" ${prod.category === 'diamantes' ? 'selected' : ''}>Alta Joyería & Diamantes</option>
+              <option value="limitada" ${prod.category === 'limitada' ? 'selected' : ''}>Edición Limitada</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Metal Noble</label>
+            <select id="edit-prod-metal" class="form-select">
+              <option value="Oro 18K" ${prod.metal === 'Oro 18K' ? 'selected' : ''}>Oro 18K Amarillo</option>
+              <option value="Oro Blanco 18K" ${prod.metal === 'Oro Blanco 18K' ? 'selected' : ''}>Oro Blanco 18K</option>
+              <option value="Plata 925" ${prod.metal === 'Plata 925' ? 'selected' : ''}>Plata 925</option>
+              <option value="Plata 925 Bañada en Oro" ${prod.metal && prod.metal.includes('Bañada') ? 'selected' : ''}>Plata 925 Bañada en Oro 24K</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Precio en ARS ($)</label>
+            <input type="number" id="edit-prod-price" class="form-input" value="${prod.price || 0}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Etiqueta / Badge</label>
+            <input type="text" id="edit-prod-badge" class="form-input" value="${prod.badge || ''}" placeholder="Ej. Best Seller, Edición Limitada...">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label">Disponibilidad en Taller</label>
+          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="checkbox" id="edit-prod-stock" ${prod.in_stock ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--admin-rose-primary);">
+            <span>Pieza disponible para compra inmediata (En Stock)</span>
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.6rem;">
+          <label class="form-label">Descripción Editorial & Orfebrería</label>
+          <textarea id="edit-prod-desc" class="form-input" rows="3">${prod.description || ''}</textarea>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--admin-rose-border); padding-top: 1.2rem;">
+          <button type="button" class="btn-op-action btn-op-danger" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\\'")}')">
+            ${window.ICONS.trash || ''} <span>Eliminar Joya</span>
+          </button>
+          
+          <div style="display: flex; gap: 0.8rem;">
+            <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
+            <button type="submit" class="btn-luxury">
+              <span>Guardar Cambios</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Configurar zonas de subida local
+  setTimeout(() => {
+    bindUploadZone('edit-pri-zone', 'edit-pri-file', 'edit-prod-img', 'edit-pri-preview', 'edit-pri-status');
+    bindUploadZone('edit-sec-zone', 'edit-sec-file', 'edit-prod-sec-img', 'edit-sec-preview', 'edit-sec-status');
+  }, 50);
+}
+
+async function handleEditProductSubmit(e, productId) {
+  e.preventDefault();
+  const name = document.getElementById('edit-prod-name').value.trim();
+  const category = document.getElementById('edit-prod-category').value;
+  const metal = document.getElementById('edit-prod-metal').value;
+  const price = parseFloat(document.getElementById('edit-prod-price').value);
+  const badge = document.getElementById('edit-prod-badge').value.trim();
+  const in_stock = document.getElementById('edit-prod-stock').checked;
+  const primary_image = document.getElementById('edit-prod-img').value.trim();
+  const secondary_image = document.getElementById('edit-prod-sec-img') ? document.getElementById('edit-prod-sec-img').value.trim() : '';
+  const description = document.getElementById('edit-prod-desc').value.trim();
+
+  try {
+    const res = await fetch(`/api/admin/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
+      body: JSON.stringify({
+        name,
+        category,
+        metal,
+        price,
+        badge,
+        in_stock,
+        primary_image,
+        secondary_image,
+        description
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(`Joya '${name}' actualizada con éxito`);
+      closeAdminModal();
+      fetchCatalog();
+    } else {
+      showToast(result.error || 'Error al actualizar la joya');
+    }
+  } catch (err) {
+    showToast('Error de conexión al guardar cambios');
+  }
+}
+
+// --- ELIMINAR JOYA DEL CATÁLOGO ---
+async function deleteProduct(productId, jewelName) {
+  if (!confirm(`¿Estás seguro/a de que querés eliminar la joya "${jewelName}" del catálogo de GALILEA Atelier? Esta acción no se puede deshacer.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/admin/products/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${AdminState.token}`
+      }
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(`Joya "${jewelName}" eliminada del catálogo`);
+      closeAdminModal();
+      fetchCatalog();
+    } else {
+      showToast(result.error || 'Error al eliminar joya');
+    }
+  } catch (err) {
+    showToast('Error de conexión');
+  }
+}
+
 
 // =========================================================================
 // MÓDULO 3: OFERTAS & TEXTOS DE PORTADA (SOLO ADMIN)
@@ -806,6 +1370,35 @@ function setupFilterListeners() {
     });
   }
 
+  // Filtros del Catálogo de Joyas
+  const catalogSearch = document.getElementById('catalog-search');
+  if (catalogSearch) {
+    let catTimeout = null;
+    catalogSearch.addEventListener('input', (e) => {
+      clearTimeout(catTimeout);
+      catTimeout = setTimeout(() => {
+        AdminState.catalogQuery = e.target.value.trim().toLowerCase();
+        renderCatalogTable();
+      }, 200);
+    });
+  }
+
+  const catalogCatFilter = document.getElementById('catalog-category-filter');
+  if (catalogCatFilter) {
+    catalogCatFilter.addEventListener('change', (e) => {
+      AdminState.catalogCategory = e.target.value;
+      renderCatalogTable();
+    });
+  }
+
+  const catalogStockFilter = document.getElementById('catalog-stock-filter');
+  if (catalogStockFilter) {
+    catalogStockFilter.addEventListener('change', (e) => {
+      AdminState.catalogStock = e.target.value;
+      renderCatalogTable();
+    });
+  }
+
   const overlay = document.getElementById('admin-modal-overlay');
   if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) closeAdminModal(); });
 }
@@ -819,7 +1412,7 @@ function showToast(message) {
   }
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.innerHTML = `<span>${window.ICONS.check}</span><span>${message}</span>`;
+  toast.innerHTML = `<span>${window.ICONS.check || '✓'}</span><span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -842,3 +1435,8 @@ window.saveProductPrice = saveProductPrice;
 window.toggleProductStock = toggleProductStock;
 window.openCreateProductModal = openCreateProductModal;
 window.handleCreateProductSubmit = handleCreateProductSubmit;
+window.openEditProductModal = openEditProductModal;
+window.handleEditProductSubmit = handleEditProductSubmit;
+window.deleteProduct = deleteProduct;
+window.toggleUploadTab = toggleUploadTab;
+

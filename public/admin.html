@@ -6,14 +6,15 @@
   <title>Backoffice Modular & Operaciones | GALILEA Atelier</title>
   <meta name="robots" content="noindex, nofollow">
 
-  <!-- Tipografía Oficial (Brooki Bakehouse Style - 100% DM Sans) -->
+  <!-- Tipografía Oficial GALILEA (Instrument Serif + Inter Tight) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 
-  <!-- Estilos -->
+  <!-- Estilos Oficiales -->
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/galilea.css">
+  <link rel="stylesheet" href="/css/admin-luxury.css">
 </head>
 <body class="admin-body">
 
@@ -23,8 +24,18 @@
   <div id="login-view" class="login-wrapper">
     <div class="login-card">
       <div class="login-brand-title">GALILEA</div>
-      <div style="font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold-dark); font-weight: 600; margin-bottom: 2rem;">
+      <div class="login-subtitle">
         Acceso Exclusivo de Personal & Taller
+      </div>
+
+      <!-- Accesos Rápidos Oficiales -->
+      <div class="demo-credentials-strip">
+        <button type="button" class="demo-chip-btn" onclick="fillLogin('bren', 'brenpea')">
+          <span>👑 Directora: Bren</span>
+        </button>
+        <button type="button" class="demo-chip-btn" onclick="fillLogin('taller', 'taller123')">
+          <span>🔨 Maestro Orfebre: Martín</span>
+        </button>
       </div>
 
       <form id="admin-login-form">
@@ -38,14 +49,14 @@
           <input type="password" id="login-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required value="">
         </div>
 
-        <button type="submit" class="btn-luxury" style="width: 100%;" id="btn-submit-login">
+        <button type="submit" class="btn-luxury" style="width: 100%; justify-content: center;" id="btn-submit-login">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <span>Ingresar al Sistema</span>
         </button>
       </form>
 
       <div style="margin-top: 2rem;">
-        <a href="/" target="_blank" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline;">
+        <a href="/" target="_blank" style="font-size: 0.75rem; color: var(--admin-text-muted); text-decoration: underline;">
           ← Volver a la Tienda Pública
         </a>
       </div>
@@ -60,49 +71,57 @@
     <!-- Barra Superior -->
     <header class="admin-topbar">
       <div class="admin-brand">
-        <div class="admin-brand-title">GALILEA</div>
-        <span class="user-role-badge" id="header-role-badge">Admin</span>
-        <span style="font-size: 0.8rem; color: var(--text-secondary);" id="header-user-name">Cargando...</span>
+        <div class="admin-brand-logo-wrap">
+          <span class="admin-brand-title">GALILEA</span>
+          <span class="admin-brand-subtitle">Atelier Backoffice</span>
+        </div>
+        
+        <div class="user-profile-capsule">
+          <div class="user-avatar-initial" id="header-user-avatar">B</div>
+          <span style="font-size: 0.78rem; font-weight: 600; color: var(--admin-text-main);" id="header-user-name">Cargando...</span>
+          <span class="user-role-badge role-admin" id="header-role-badge">Admin</span>
+        </div>
       </div>
 
       <div class="admin-actions">
         <a href="/" target="_blank" class="admin-btn-store">
-          <span>Ver Tienda Pública</span>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>Ver Tienda</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
-        <button class="btn-luxury-outline" style="color: var(--pastel-rose-deep); border-color: var(--pastel-rose-border); background: #FFFFFF; padding: 0.45rem 1rem; font-size: 0.75rem; border-radius: var(--radius-full);" onclick="logout()">
+        <button class="btn-luxury-outline" style="color: var(--admin-rose-deep); border-color: var(--admin-rose-border); background: #FFFFFF; padding: 0.45rem 1rem; font-size: 0.72rem; border-radius: var(--radius-full);" onclick="logout()">
           <span>Cerrar Sesión</span>
         </button>
       </div>
     </header>
 
     <!-- Barra Modular de Pestañas / Switch -->
-    <div class="admin-switch-strip" style="background: linear-gradient(180deg, #FAF0F3 0%, #F5EAEF 100%); border-bottom: 1.5px solid var(--pastel-rose-border); padding: 0.6rem 2rem;">
+    <div class="admin-switch-strip">
       <div class="container" style="padding: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
         <nav class="admin-module-switch" aria-label="Módulos del panel">
           <button class="admin-tab-btn active" data-tab="orders" onclick="switchModule('orders')">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.28a2 2 0 0 0-.59-1.42L18.7 7.59A2 2 0 0 0 17.28 7H14v11h1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.28a2 2 0 0 0-.59-1.42L18.7 7.59A2 2 0 0 0 17.28 7H14v11h1"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
             <span>Taller & Despachos</span>
           </button>
           
           <button class="admin-tab-btn admin-only-tab" data-tab="catalog" onclick="switchModule('catalog')">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
-            <span>Catálogo & Precios</span>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            <span>Catálogo & Fotos</span>
           </button>
 
           <button class="admin-tab-btn admin-only-tab" data-tab="marketing" onclick="switchModule('marketing')">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             <span>Ofertas & Portada</span>
           </button>
 
           <button class="admin-tab-btn admin-only-tab" data-tab="team" onclick="switchModule('team')">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span>Equipo & Operarios</span>
           </button>
         </nav>
 
-        <div style="font-size: 0.72rem; color: var(--text-secondary);">
-          Autenticación Bancaria: <span style="color: #3E7250; font-weight: 700;">AUTOMÁTICA (GATEWAY ACTIVO)</span>
+        <div style="font-size: 0.72rem; color: var(--admin-text-secondary); display: flex; align-items: center; gap: 0.4rem;">
+          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2DA44E;"></span>
+          Cobros & Archivos: <strong style="color: #205C33;">Persistencia Local Activa</strong>
         </div>
       </div>
     </div>
@@ -221,13 +240,13 @@
            MÓDULO 2: CATÁLOGO & PRECIOS (SOLO ADMIN)
            ===================================================================== -->
       <section id="module-catalog" class="admin-section-view" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h1 class="serif-font" style="font-size: 2.2rem; color: var(--text-primary); margin-bottom: 0.2rem;">
-              Administración de Catálogo & Precios
+            <h1 class="serif-font" style="font-size: 2.3rem; color: var(--admin-text-main); margin-bottom: 0.2rem;">
+              Administración de Catálogo & Joyas
             </h1>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">
-              Ajustá los precios en Pesos Argentinos (ARS) y controlá la disponibilidad de piezas en tiempo real.
+            <p style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              Cambiá fotos principales o secundarias (subí archivos locales o links), editá precios y controlá disponibilidad en tiempo real.
             </p>
           </div>
           <button class="btn-luxury" onclick="openCreateProductModal()">
@@ -236,15 +255,51 @@
           </button>
         </div>
 
+        <!-- Barra de búsqueda y filtrado de joyas -->
+        <div class="admin-toolbar">
+          <div class="admin-search-wrap">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" style="color: var(--admin-text-muted);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="catalog-search" class="admin-search-input" placeholder="Buscar joya por nombre, ID o metal...">
+          </div>
+
+          <div class="admin-filters-row">
+            <div>
+              <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-muted); margin-right: 0.3rem;">Categoría:</span>
+              <select id="catalog-category-filter" class="select-minimal">
+                <option value="todos">Todas las categorías</option>
+                <option value="anillos">Anillos</option>
+                <option value="collares">Collares</option>
+                <option value="aros">Aros</option>
+                <option value="pulseras">Pulseras</option>
+                <option value="diamantes">Alta Joyería & Diamantes</option>
+                <option value="limitada">Edición Limitada</option>
+              </select>
+            </div>
+
+            <div>
+              <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-muted); margin-right: 0.3rem;">Stock:</span>
+              <select id="catalog-stock-filter" class="select-minimal">
+                <option value="all">Todo</option>
+                <option value="in_stock">Solo En Stock</option>
+                <option value="out_of_stock">Solo Agotados</option>
+              </select>
+            </div>
+
+            <div style="font-size: 0.78rem; font-weight: 600; color: var(--admin-rose-deep); padding-left: 0.4rem;" id="catalog-total-counter">
+              Cargando catálogo...
+            </div>
+          </div>
+        </div>
+
         <div class="admin-table-card">
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Pieza de Joyería</th>
+                <th>Pieza de Joyería & Fotos</th>
                 <th>Categoría / Metal</th>
                 <th>Precio en ARS ($)</th>
                 <th>Disponibilidad</th>
-                <th>Acciones</th>
+                <th style="text-align: right;">Acciones</th>
               </tr>
             </thead>
             <tbody id="catalog-table-body">

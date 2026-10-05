@@ -18,7 +18,13 @@
       "peso_estimado": "4.2 gramos",
       "origen": "Orfebrería artesanal, Buenos Aires"
     },
-    "sizes": ["12", "14", "16", "18", "20"],
+    "sizes": [
+      "12",
+      "14",
+      "16",
+      "18",
+      "20"
+    ],
     "in_stock": true
   },
   {
@@ -40,7 +46,10 @@
       "longitud": "42 cm con extensor a 45 cm",
       "cierre": "Mosquetón de seguridad microscópico"
     },
-    "sizes": ["42 cm", "45 cm"],
+    "sizes": [
+      "42 cm",
+      "45 cm"
+    ],
     "in_stock": true
   },
   {
@@ -62,7 +71,9 @@
       "cierre": "Articulado a presión invisible",
       "acabado": "Pulido brillante a espejo"
     },
-    "sizes": ["Único (24 mm)"],
+    "sizes": [
+      "Único (24 mm)"
+    ],
     "in_stock": true
   },
   {
@@ -84,7 +95,11 @@
       "cierre": "Doble traba lateral de seguridad",
       "ancho": "2.8 mm"
     },
-    "sizes": ["16 cm", "17.5 cm", "19 cm"],
+    "sizes": [
+      "16 cm",
+      "17.5 cm",
+      "19 cm"
+    ],
     "in_stock": true
   },
   {
@@ -106,7 +121,10 @@
       "longitud_cadena": "50 cm",
       "peso": "5.6 gramos"
     },
-    "sizes": ["45 cm", "50 cm"],
+    "sizes": [
+      "45 cm",
+      "50 cm"
+    ],
     "in_stock": true
   },
   {
@@ -128,7 +146,12 @@
       "estructura": "Diseño abierto ergonómico",
       "acabado": "Pulido brillante con cantos suaves"
     },
-    "sizes": ["12", "14", "16", "18"],
+    "sizes": [
+      "12",
+      "14",
+      "16",
+      "18"
+    ],
     "in_stock": true
   },
   {
@@ -150,7 +173,9 @@
       "cierre": "Perno con tuerca mariposa reforzada",
       "acabado": "Espejo de alto brillo"
     },
-    "sizes": ["Único (30 mm)"],
+    "sizes": [
+      "Único (30 mm)"
+    ],
     "in_stock": true
   },
   {
@@ -172,7 +197,10 @@
       "cierre": "Bisagra de tensión oculta con traba de clic",
       "peso": "11.8 gramos"
     },
-    "sizes": ["S (15-16 cm)", "M (17-18 cm)"],
+    "sizes": [
+      "S (15-16 cm)",
+      "M (17-18 cm)"
+    ],
     "in_stock": true
   },
   {
@@ -194,7 +222,14 @@
       "perfil": "Confort fit interior",
       "acabado": "Facetado a buril y lustre satinado"
     },
-    "sizes": ["14", "16", "18", "20", "22", "24"],
+    "sizes": [
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24"
+    ],
     "in_stock": true
   },
   {
@@ -216,7 +251,11 @@
       "longitud": "45 cm",
       "cierre": "Reasa redonda extrafina de oro 18k"
     },
-    "sizes": ["40 cm", "45 cm", "50 cm"],
+    "sizes": [
+      "40 cm",
+      "45 cm",
+      "50 cm"
+    ],
     "in_stock": true
   },
   {
@@ -238,7 +277,12 @@
       "diamantes_halo": "0.20 ct total micropavé",
       "peso": "3.8 gramos"
     },
-    "sizes": ["12", "14", "16", "18"],
+    "sizes": [
+      "12",
+      "14",
+      "16",
+      "18"
+    ],
     "in_stock": true
   },
   {
@@ -260,7 +304,9 @@
       "ajuste": "Presión flexible indeformable",
       "acabado": "Pulido brillante a espejo"
     },
-    "sizes": ["Ajustable"],
+    "sizes": [
+      "Ajustable"
+    ],
     "in_stock": true
   },
   {
@@ -282,7 +328,11 @@
       "peso": "7.4 gramos",
       "origen": "Taller Central, Buenos Aires"
     },
-    "sizes": ["14", "16", "18"],
+    "sizes": [
+      "14",
+      "16",
+      "18"
+    ],
     "in_stock": true
   },
   {
@@ -304,7 +354,10 @@
       "cadena": "55 cm regulable",
       "peso": "6.8 gramos"
     },
-    "sizes": ["50 cm", "55 cm"],
+    "sizes": [
+      "50 cm",
+      "55 cm"
+    ],
     "in_stock": true
   }
 ]

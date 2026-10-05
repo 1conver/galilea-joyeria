@@ -317,6 +317,20 @@ class handler(BaseHTTPRequestHandler):
             return
 
 
+        # POST /api/admin/upload
+        if path == "/api/admin/upload":
+            b64_data = body.get("data") or body.get("image") or ""
+            filename = body.get("filename", "joya.jpg")
+            # En Vercel serverless (read-only), devolvemos el data-url o simulado
+            data_url = b64_data if b64_data.startswith("data:") else f"data:image/jpeg;base64,{b64_data}"
+            self._set_headers(200)
+            self.wfile.write(json.dumps({
+                "success": True,
+                "url": data_url,
+                "filename": filename
+            }).encode('utf-8'))
+            return
+
         self._set_headers(404)
         self.wfile.write(json.dumps({"success": False, "error": "Ruta no encontrada"}).encode('utf-8'))
 
@@ -348,8 +362,22 @@ class handler(BaseHTTPRequestHandler):
             parts = path.split("/")
             prod_id = parts[4] if len(parts) > 4 else ""
             self._set_headers(200)
-            self.wfile.write(json.dumps({"success": True, "message": f"Joya {prod_id} actualizada"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": True, "message": f"Joya {prod_id} actualizada", "product": {"id": prod_id, **body}}).encode('utf-8'))
             return
 
         self._set_headers(404)
         self.wfile.write(json.dumps({"success": False, "error": "Ruta no encontrada"}).encode('utf-8'))
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path.startswith("/api/admin/products/"):
+            parts = path.split("/")
+            prod_id = parts[4] if len(parts) > 4 else ""
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"success": True, "message": f"Joya {prod_id} eliminada"}).encode('utf-8'))
+            return
+
+        self._set_headers(404)
+        self.wfile.write(json.dumps({"success": False, "error": "Ruta no encontrada"}).encode('utf-8'))
+

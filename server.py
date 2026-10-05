@@ -17,6 +17,8 @@ MP_ACCESS_TOKEN = os.environ.get("MERCADOPAGO_ACCESS_TOKEN", "").strip()
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 PUBLIC_DIR = os.path.join(os.path.dirname(__file__), "public")
+UPLOADS_DIR = os.path.join(PUBLIC_DIR, "uploads")
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 PRODUCTS_FILE = os.path.join(DATA_DIR, "products.json")
 ORDERS_FILE = os.path.join(DATA_DIR, "orders.json")
@@ -274,10 +276,10 @@ async def handle_admin_create_product(request):
     return web.json_response({"success": True, "message": "Joya creada en el catálogo", "product": new_prod})
 
 async def handle_admin_update_product(request):
-    """PUT /api/admin/products/{id} - Modificar precio, stock o datos de una joya"""
+    """PUT /api/admin/products/{id} - Modificar precio, stock, imágenes o datos de una joya"""
     user = get_current_user(request)
     if not user or user.get("role") != "admin":
-        return web.json_response({"success": False, "error": "Acceso restringido"}, status=403)
+        return web.json_response({"success": False, "error": "Acceso restringido a administradores"}, status=403)
 
     product_id = request.match_info.get("id")
     try:
@@ -297,15 +299,106 @@ async def handle_admin_update_product(request):
         prod["in_stock"] = bool(data["in_stock"])
     if "name" in data:
         prod["name"] = data["name"].strip()
+    if "category" in data and data["category"]:
+        cat = data["category"].strip()
+        prod["category"] = cat
+        prod["category_label"] = cat.capitalize()
+    if "metal" in data and data["metal"]:
+        metal = data["metal"].strip()
+        prod["metal"] = metal
+        prod["metal_group"] = "oro" if "oro" in metal.lower() and "blanco" not in metal.lower() else ("oro-blanco" if "blanco" in metal.lower() else "plata")
+        if "specs" in prod and isinstance(prod["specs"], dict):
+            prod["specs"]["metal"] = metal
     if "badge" in data:
         prod["badge"] = data["badge"].strip()
     if "description" in data:
         prod["description"] = data["description"].strip()
+    if "primary_image" in data and data["primary_image"]:
+        prod["primary_image"] = data["primary_image"].strip()
+    if "secondary_image" in data and data["secondary_image"]:
+        prod["secondary_image"] = data["secondary_image"].strip()
 
     products[target_idx] = prod
     save_products(products)
 
-    return web.json_response({"success": True, "message": "Joya actualizada", "product": prod})
+    return web.json_response({"success": True, "message": "Joya actualizada correctamente", "product": prod})
+
+async def handle_admin_delete_product(request):
+    """DELETE /api/admin/products/{id} - Dar de baja una joya del catálogo"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return web.json_response({"success": False, "error": "Acceso restringido a administradores"}, status=403)
+
+    product_id = request.match_info.get("id")
+    products = load_products()
+    filtered = [p for p in products if p.get("id") != product_id]
+
+    if len(filtered) == len(products):
+        return web.json_response({"success": False, "error": "Producto no encontrado"}, status=404)
+
+    save_products(filtered)
+    return web.json_response({"success": True, "message": f"Joya {product_id} eliminada del catálogo"})
+
+async def handle_admin_upload(request):
+    """POST /api/admin/upload - Subida directa de fotos locales para joyas"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return web.json_response({"success": False, "error": "Acceso restringido a administradores"}, status=403)
+
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+    try:
+        content_type = request.content_type or ""
+        if "multipart" in content_type:
+            reader = await request.multipart()
+            field = await reader.next()
+            while field:
+                if field.name in ("file", "image", "foto"):
+                    filename = field.filename or "joya.jpg"
+                    ext = os.path.splitext(filename)[1].lower()
+                    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"]:
+                        ext = ".jpg"
+                    unique_name = f"joya_{int(datetime.now().timestamp())}_{secrets.token_hex(4)}{ext}"
+                    filepath = os.path.join(UPLOADS_DIR, unique_name)
+                    with open(filepath, "wb") as f:
+                        while True:
+                            chunk = await field.read_chunk()
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                    return web.json_response({
+                        "success": True,
+                        "url": f"/uploads/{unique_name}",
+                        "filename": unique_name
+                    })
+                field = await reader.next()
+            return web.json_response({"success": False, "error": "No se recibió archivo en el campo file"}, status=400)
+        elif "json" in content_type:
+            data = await request.json()
+            b64_data = data.get("data") or data.get("image") or ""
+            filename = data.get("filename", "joya.jpg")
+            ext = os.path.splitext(filename)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"]:
+                ext = ".jpg"
+            if "," in b64_data:
+                b64_data = b64_data.split(",", 1)[1]
+            import base64
+            file_bytes = base64.b64decode(b64_data)
+            unique_name = f"joya_{int(datetime.now().timestamp())}_{secrets.token_hex(4)}{ext}"
+            filepath = os.path.join(UPLOADS_DIR, unique_name)
+            with open(filepath, "wb") as f:
+                f.write(file_bytes)
+            return web.json_response({
+                "success": True,
+                "url": f"/uploads/{unique_name}",
+                "filename": unique_name
+            })
+        else:
+            return web.json_response({"success": False, "error": "Formato de archivo no soportado"}, status=400)
+    except Exception as e:
+        print("Error en upload:", e)
+        return web.json_response({"success": False, "error": f"Error al procesar la imagen: {str(e)}"}, status=500)
+
 
 # --- API CATÁLOGO PÚBLICO ---
 
@@ -605,7 +698,7 @@ async def handle_admin_stats(request):
 # --- CONFIGURACIÓN DE LA APP Y SERVICIO DE ARCHIVOS ESTÁTICOS ---
 
 def create_app():
-    app = web.Application()
+    app = web.Application(client_max_size=25 * 1024 * 1024)
     
     # Rutas Públicas
     app.router.add_get("/api/products", handle_get_products)
@@ -630,6 +723,8 @@ def create_app():
     # Rutas de Catálogo, Ofertas y Usuarios (Admin)
     app.router.add_post("/api/admin/products", handle_admin_create_product)
     app.router.add_put("/api/admin/products/{id}", handle_admin_update_product)
+    app.router.add_delete("/api/admin/products/{id}", handle_admin_delete_product)
+    app.router.add_post("/api/admin/upload", handle_admin_upload)
     app.router.add_put("/api/admin/settings", handle_update_settings)
     app.router.add_get("/api/admin/users", handle_admin_get_users)
     app.router.add_post("/api/admin/users", handle_admin_create_user)
@@ -648,6 +743,7 @@ def create_app():
     # Static assets
     app.router.add_static("/css/", path=os.path.join(PUBLIC_DIR, "css"), name="css")
     app.router.add_static("/js/", path=os.path.join(PUBLIC_DIR, "js"), name="js")
+    app.router.add_static("/uploads/", path=UPLOADS_DIR, name="uploads")
 
     # Panel de Operarios y Administradores
     async def admin_handler(request):

@@ -1,0 +1,822 @@
+/* ==========================================================================
+   GALILEA ATELIER — Sistema de Diseño de Backoffice & Panel Modular
+   Paleta Oficial: Rosa Seda, Vino Noble, Marfil, Oro Rosado
+   ========================================================================== */
+
+:root {
+  --admin-bg: #FDF4F5;
+  --admin-surface: #FFFBFB;
+  --admin-surface-card: #FFFFFF;
+  --admin-subtle: #F9E7EA;
+  --admin-accent: #F2D0D7;
+  
+  --admin-text-main: #3A1822;
+  --admin-text-secondary: #6E4A55;
+  --admin-text-muted: #A5808B;
+  
+  --admin-rose-primary: #C4506B;
+  --admin-rose-hover: #AD3F59;
+  --admin-rose-deep: #8E2F48;
+  --admin-rose-border: #F0D3DA;
+  --admin-rose-border-strong: #E3B9C3;
+  --admin-rose-gradient: linear-gradient(135deg, #D4617B 0%, #C4506B 100%);
+  --admin-rose-gradient-hover: linear-gradient(135deg, #C4506B 0%, #AD3F59 100%);
+
+  --admin-gold: #B8836F;
+  --admin-gold-dark: #8F5F4E;
+  --admin-gold-light: #FBEFEB;
+
+  --admin-success-bg: #EDF7F0;
+  --admin-success-text: #205C33;
+  --admin-success-border: #C8E6D0;
+
+  --admin-warning-bg: #FEF8ED;
+  --admin-warning-text: #8C5912;
+  --admin-warning-border: #F7E4BE;
+
+  --admin-danger-bg: #FDEEEE;
+  --admin-danger-text: #962332;
+  --admin-danger-border: #F7C6CC;
+
+  --admin-shadow-soft: 0 4px 20px rgba(142, 47, 72, 0.05);
+  --admin-shadow-card: 0 10px 30px -10px rgba(142, 47, 72, 0.08);
+  --admin-shadow-hover: 0 14px 34px -8px rgba(196, 80, 107, 0.18);
+  --admin-shadow-modal: 0 25px 60px -15px rgba(58, 24, 34, 0.35);
+
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Base */
+body.admin-body {
+  background-color: var(--admin-bg) !important;
+  color: var(--admin-text-main) !important;
+  font-family: var(--font-sans) !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   1. LOGIN DE PERSONAL & TALLER (Estilo Boutique Exclusivo)
+   -------------------------------------------------------------------------- */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: radial-gradient(circle at 50% 25%, #FFFBFB 0%, #F9E7EA 60%, #F4D6DC 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 80, 107, 0.12) 0%, transparent 70%);
+  top: -150px;
+  right: -100px;
+  pointer-events: none;
+}
+
+.login-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 131, 111, 0.12) 0%, transparent 70%);
+  bottom: -150px;
+  left: -100px;
+  pointer-events: none;
+}
+
+.login-card {
+  background: rgba(255, 251, 251, 0.94);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--admin-rose-border);
+  border-radius: 20px;
+  box-shadow: var(--admin-shadow-modal);
+  padding: 3.2rem 2.8rem;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.4s ease;
+}
+
+.login-brand-title {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  color: var(--admin-text-main);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+  text-indent: 0.28em;
+}
+
+.login-subtitle {
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--admin-rose-primary);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.demo-credentials-strip {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.8rem;
+  flex-wrap: wrap;
+}
+
+.demo-chip-btn {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.8rem;
+  background: var(--admin-subtle);
+  border: 1px solid var(--admin-rose-border);
+  border-radius: 9999px;
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.demo-chip-btn:hover {
+  background: #FFFFFF;
+  border-color: var(--admin-rose-primary);
+  color: var(--admin-rose-deep);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   2. TOPBAR & ENCABEZADO MODULAR
+   -------------------------------------------------------------------------- */
+.admin-topbar {
+  background: rgba(253, 244, 245, 0.92) !important;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--admin-rose-border) !important;
+  padding: 0.9rem 2.2rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--admin-shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.admin-brand-logo-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+
+.admin-brand-title {
+  font-family: var(--font-serif) !important;
+  font-size: 2.1rem !important;
+  letter-spacing: 0.22em !important;
+  font-weight: 400 !important;
+  color: var(--admin-text-main) !important;
+  line-height: 1;
+  text-indent: 0.22em;
+}
+
+.admin-brand-subtitle {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--admin-rose-primary);
+  font-weight: 600;
+}
+
+.user-profile-capsule {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #FFFFFF;
+  border: 1px solid var(--admin-rose-border);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(196, 80, 107, 0.04);
+}
+
+.user-avatar-initial {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--admin-rose-gradient);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.user-role-badge {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem !important;
+  border-radius: 9999px;
+}
+
+.role-admin {
+  background: #FDF0F3 !important;
+  color: var(--admin-rose-deep) !important;
+  border: 1px solid var(--admin-rose-border) !important;
+}
+
+.role-operario {
+  background: #F8F5F0 !important;
+  color: #7A5832 !important;
+  border: 1px solid #EADBCE !important;
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-btn-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  background: #FFFFFF;
+  border: 1.2px solid var(--admin-rose-border);
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.admin-btn-store:hover {
+  border-color: var(--admin-rose-primary);
+  color: var(--admin-rose-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(196, 80, 107, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   3. BARRA MODULAR DE PESTAÑAS
+   -------------------------------------------------------------------------- */
+.admin-switch-strip {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--admin-rose-border) !important;
+  padding: 0.7rem 2.2rem !important;
+}
+
+.admin-module-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--admin-subtle);
+  padding: 0.3rem;
+  border-radius: 9999px;
+  border: 1px solid var(--admin-rose-border);
+}
+
+.admin-tab-btn {
+  padding: 0.5rem 1.15rem !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-weight: 600 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--admin-text-secondary) !important;
+  border-radius: 9999px !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.25s ease !important;
+}
+
+.admin-tab-btn:hover {
+  color: var(--admin-rose-deep) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+.admin-tab-btn.active {
+  background: var(--admin-rose-gradient) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(196, 80, 107, 0.3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. KPIS Y TARJETAS RESUMEN
+   -------------------------------------------------------------------------- */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2rem;
+  margin: 1.8rem 0 2.2rem;
+}
+
+.kpi-card {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-rose-border) !important;
+  border-radius: 14px !important;
+  padding: 1.4rem 1.6rem !important;
+  box-shadow: var(--admin-shadow-card) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--admin-shadow-hover) !important;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--admin-rose-gradient);
+}
+
+.kpi-label {
+  font-size: 0.66rem !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--admin-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+.kpi-val {
+  font-family: var(--font-serif) !important;
+  font-size: 2.3rem !important;
+  color: var(--admin-text-main) !important;
+  font-weight: 400 !important;
+  line-height: 1.1;
+  margin: 0.2rem 0;
+}
+
+.kpi-sub {
+  font-size: 0.72rem !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. TOOLBARS Y CONTROLES DE FILTRADO
+   -------------------------------------------------------------------------- */
+.admin-toolbar {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-rose-border) !important;
+  border-radius: 14px !important;
+  padding: 1rem 1.4rem !important;
+  margin-bottom: 1.6rem !important;
+  box-shadow: var(--admin-shadow-soft) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-search-wrap {
+  background: #FFFFFF !important;
+  border: 1.2px solid var(--admin-rose-border) !important;
+  border-radius: 9999px !important;
+  padding: 0.5rem 1rem !important;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  max-width: 380px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-search-wrap:focus-within {
+  border-color: var(--admin-rose-primary) !important;
+  box-shadow: 0 0 0 3px rgba(196, 80, 107, 0.12);
+}
+
+.admin-search-input {
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  font-size: 0.8rem !important;
+  color: var(--admin-text-main) !important;
+  width: 100%;
+}
+
+.admin-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.select-minimal {
+  background: #FFFFFF !important;
+  border: 1.2px solid var(--admin-rose-border) !important;
+  border-radius: 9999px !important;
+  padding: 0.45rem 1rem !important;
+  font-size: 0.74rem !important;
+  color: var(--admin-text-secondary) !important;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.select-minimal:focus {
+  border-color: var(--admin-rose-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. TABLAS DE GESTIÓN (Taller, Catálogo, Usuarios)
+   -------------------------------------------------------------------------- */
+.admin-table-card {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-rose-border) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--admin-shadow-card) !important;
+  overflow: hidden;
+  margin-bottom: 3rem !important;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  background: #FFF5F7 !important;
+  color: var(--admin-text-secondary) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  padding: 1rem 1.4rem !important;
+  border-bottom: 1px solid var(--admin-rose-border) !important;
+  font-weight: 700 !important;
+}
+
+.admin-table td {
+  padding: 1.1rem 1.4rem !important;
+  border-bottom: 1px solid rgba(240, 211, 218, 0.6) !important;
+  vertical-align: middle;
+  font-size: 0.82rem !important;
+}
+
+.admin-table tr:hover td {
+  background: rgba(249, 231, 234, 0.35) !important;
+}
+
+/* Miniaturas de Catálogo */
+.product-thumb-preview {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--admin-rose-border);
+  box-shadow: 0 2px 8px rgba(142, 47, 72, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.product-thumb-preview:hover {
+  transform: scale(1.1);
+}
+
+/* Badges de Estado */
+.badge-status {
+  padding: 0.28rem 0.75rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-approved {
+  background: var(--admin-success-bg) !important;
+  color: var(--admin-success-text) !important;
+  border: 1px solid var(--admin-success-border) !important;
+}
+
+.badge-pending {
+  background: var(--admin-warning-bg) !important;
+  color: var(--admin-warning-text) !important;
+  border: 1px solid var(--admin-warning-border) !important;
+}
+
+.badge-rejected {
+  background: var(--admin-danger-bg) !important;
+  color: var(--admin-danger-text) !important;
+  border: 1px solid var(--admin-danger-border) !important;
+}
+
+.badge-workshop {
+  background: #F3F1FA !important;
+  color: #4D3D82 !important;
+  border: 1px solid #DCD5F2 !important;
+}
+
+.badge-transit {
+  background: #FDF0F3 !important;
+  color: var(--admin-rose-deep) !important;
+  border: 1px solid var(--admin-rose-border) !important;
+}
+
+.badge-delivered {
+  background: #EBF2EC !important;
+  color: #1F452B !important;
+  border: 1px solid #CBE0D0 !important;
+}
+
+/* Botones de Operación en Tabla */
+.btn-op-action {
+  padding: 0.42rem 0.8rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  background: #FFFFFF !important;
+  border: 1.2px solid var(--admin-rose-border) !important;
+  color: var(--admin-text-secondary) !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease !important;
+}
+
+.btn-op-action:hover {
+  border-color: var(--admin-rose-primary) !important;
+  color: var(--admin-rose-deep) !important;
+  background: var(--admin-subtle) !important;
+  transform: translateY(-1px);
+}
+
+.btn-op-photo {
+  background: #FFF0F4 !important;
+  border-color: #E3B9C3 !important;
+  color: var(--admin-rose-deep) !important;
+  font-weight: 700 !important;
+}
+
+.btn-op-photo:hover {
+  background: var(--admin-rose-gradient) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(196, 80, 107, 0.25);
+}
+
+.btn-op-danger {
+  color: #A32D3F !important;
+  border-color: #F7C6CC !important;
+}
+
+.btn-op-danger:hover {
+  background: #FDEEEE !important;
+  border-color: #E07A89 !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. FORMULARIOS, INPUTS Y MODALES DE ADMINISTRACIÓN
+   -------------------------------------------------------------------------- */
+.admin-modal-card {
+  background: #FFFFFF !important;
+  border: 1px solid var(--admin-rose-border) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--admin-shadow-modal) !important;
+  padding: 2.4rem !important;
+  position: relative;
+  max-width: 680px !important;
+  width: 92% !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.admin-modal-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  color: var(--admin-text-main);
+  line-height: 1.1;
+  margin: 0 0 0.4rem 0;
+}
+
+.admin-modal-subtitle {
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+  margin-bottom: 1.6rem;
+}
+
+.form-label {
+  font-size: 0.74rem !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--admin-text-secondary) !important;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.form-input, .form-select, textarea.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.95rem;
+  background: var(--admin-surface);
+  border: 1.2px solid var(--admin-rose-border);
+  border-radius: 10px;
+  font-size: 0.84rem;
+  color: var(--admin-text-main);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.form-input:focus, .form-select:focus, textarea.form-input:focus {
+  border-color: var(--admin-rose-primary) !important;
+  box-shadow: 0 0 0 3px rgba(196, 80, 107, 0.14) !important;
+  background: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   8. COMPONENTE DE SUBIDA DE ARCHIVOS LOCALES (Drag & Drop + Input)
+   -------------------------------------------------------------------------- */
+.upload-zone-wrapper {
+  background: #FFFDFD;
+  border: 1.8px dashed var(--admin-rose-border-strong);
+  border-radius: 14px;
+  padding: 1.4rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  margin-top: 0.4rem;
+}
+
+.upload-zone-wrapper:hover, .upload-zone-wrapper.dragover {
+  background: var(--admin-subtle);
+  border-color: var(--admin-rose-primary);
+  transform: translateY(-1px);
+}
+
+.upload-zone-icon {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 0.6rem;
+  color: var(--admin-rose-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(196, 80, 107, 0.12);
+}
+
+.upload-zone-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--admin-text-main);
+  margin-bottom: 0.2rem;
+}
+
+.upload-zone-desc {
+  font-size: 0.7rem;
+  color: var(--admin-text-muted);
+}
+
+.upload-method-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.upload-tab-btn {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.8rem;
+  background: #FFFFFF;
+  border: 1px solid var(--admin-rose-border);
+  border-radius: 9999px;
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.upload-tab-btn.active {
+  background: var(--admin-rose-primary);
+  border-color: var(--admin-rose-primary);
+  color: #FFFFFF;
+}
+
+.image-live-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  background: var(--admin-subtle);
+  border: 1px solid var(--admin-rose-border);
+  border-radius: 12px;
+}
+
+.image-live-preview-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--admin-rose-border);
+  background: #FFFFFF;
+}
+
+.image-preview-info {
+  flex: 1;
+  text-align: left;
+  font-size: 0.74rem;
+}
+
+.image-preview-filename {
+  font-weight: 700;
+  color: var(--admin-text-main);
+  word-break: break-all;
+}
+
+.image-preview-status {
+  color: #205C33;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+/* Notificaciones Toast */
+.toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background: rgba(58, 24, 34, 0.95);
+  color: #FFFDFD;
+  backdrop-filter: blur(12px);
+  padding: 0.85rem 1.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(240, 211, 218, 0.3);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 10px 30px rgba(58, 24, 34, 0.28);
+  animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-topbar {
+    padding: 0.8rem 1rem !important;
+  }
+  .admin-brand-subtitle {
+    display: none;
+  }
+}
