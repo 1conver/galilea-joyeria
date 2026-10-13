@@ -4,7 +4,7 @@
     "name": "Bren",
     "username": "bren",
     "email": "bren@galilea-joyeria.com",
-    "password": "brenpea",
+    "password_hash": "pbkdf2_sha256$200000$2acc46831f4b7bd3b9b4117b291b1e29$2c7101862ecfc3eb85636d039b2c799ec7da4725228b24ed37972393e0ce3cdc",
     "role": "admin",
     "role_label": "Administradora General & Dirección",
     "created_at": "01/08/2026"
@@ -12,8 +12,9 @@
   {
     "id": "USR-002",
     "name": "Martín Benítez",
+    "username": "taller",
     "email": "taller@galilea-joyeria.com",
-    "password": "taller123",
+    "password_hash": "pbkdf2_sha256$200000$07671c07976a5d1c92843e44df95058f$6f427e977bd77974d135b567d15e4f56ba689879502f5e82ce7763be83a5cacc",
     "role": "operario",
     "role_label": "Maestro Orfebre & Logística",
     "created_at": "15/08/2026"
@@ -22,7 +23,7 @@
     "id": "USR-47E2",
     "name": "Lucía Morales",
     "email": "lucia@galilea-joyeria.com",
-    "password": "orfebrerialucia",
+    "password_hash": "pbkdf2_sha256$200000$9bc3efe5028ad071a673797b8e9eec3b$7a38db417c17b55d178168abd19750e3d3185e4c93d1d024442066f5f5ba8368",
     "role": "operario",
     "role_label": "Maestro Orfebre & Logística",
     "created_at": "08/09/2026"

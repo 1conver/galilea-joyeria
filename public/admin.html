@@ -178,6 +178,7 @@
                 <option value="all">Todos los cobros</option>
                 <option value="approved">Aprobados</option>
                 <option value="pending_verification">Pendientes CBU</option>
+                <option value="pending">Pendientes Mercado Pago</option>
                 <option value="rejected">Rechazados</option>
               </select>
             </div>
@@ -190,6 +191,7 @@
                 <option value="in_transit">En Tránsito Andreani</option>
                 <option value="delivered">Entregados</option>
                 <option value="pending">Aguardando Cobro</option>
+                <option value="awaiting_payment">Esperando pago (Mercado Pago)</option>
               </select>
             </div>
 
@@ -239,17 +241,22 @@
               Cambiá fotos principales o secundarias (subí archivos locales o links), editá precios y controlá disponibilidad en tiempo real.
             </p>
           </div>
-          <button class="btn-luxury" onclick="openCreateProductModal()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 5v14M5 12h14"/></svg>
-            <span>Dar de Alta Joya</span>
-          </button>
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button class="btn-luxury-outline" onclick="openOptionsModal()">
+              <span>Categorías y materiales</span>
+            </button>
+            <button class="btn-luxury" onclick="openCreateProductModal()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Dar de Alta Joya</span>
+            </button>
+          </div>
         </div>
 
         <!-- Barra de búsqueda y filtrado de joyas -->
         <div class="admin-toolbar">
           <div class="admin-search-wrap">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" style="color: var(--admin-text-muted);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="catalog-search" class="admin-search-input" placeholder="Buscar joya por nombre, ID o metal...">
+            <input type="text" id="catalog-search" class="admin-search-input" placeholder="Buscar joya por nombre, ID o material...">
           </div>
 
           <div class="admin-filters-row">
@@ -257,12 +264,6 @@
               <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-muted); margin-right: 0.3rem;">Categoría:</span>
               <select id="catalog-category-filter" class="select-minimal">
                 <option value="todos">Todas las categorías</option>
-                <option value="anillos">Anillos</option>
-                <option value="collares">Collares</option>
-                <option value="aros">Aros</option>
-                <option value="pulseras">Pulseras</option>
-                <option value="diamantes">Alta Joyería & Diamantes</option>
-                <option value="limitada">Edición Limitada</option>
               </select>
             </div>
 
@@ -351,8 +352,8 @@
               </p>
 
               <div class="form-group" style="margin-bottom: 1.2rem;">
-                <label class="form-label">Production Access Token (APP_USR-...)</label>
-                <input type="password" id="set-mp-access-token" class="form-input" placeholder="Pegá aquí tu Access Token de Producción (APP_USR-...)">
+                <label class="form-label">Access Token (APP_USR-...)</label>
+                <input type="password" id="set-mp-access-token" class="form-input" autocomplete="off" placeholder="Pegá aquí tu Access Token (APP_USR-...)">
                 <span style="font-size: 0.72rem; color: var(--admin-text-muted);">Requerido para generar los links de cobro oficiales y recibir el dinero en tu cuenta.</span>
               </div>
 

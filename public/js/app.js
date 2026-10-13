@@ -16,7 +16,8 @@ const AppState = {
   selectedProduct: null,
   selectedSize: null,
   activePaymentTab: 'mercadopago',
-  appliedPromo: null
+  appliedPromo: null,
+  transferDiscountPct: 15
 };
 
 // Formateador de moneda para Argentina (ARS)
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
   initScrollAnimations();
   initAIChatAdvisor();
+  handleCheckoutReturn();
 });
 
 async function fetchStoreSettings() {
@@ -48,6 +50,8 @@ async function fetchStoreSettings() {
     const data = await res.json();
     if (data.success && data.settings) {
       const s = data.settings;
+      const pct = Number(s.transfer_discount_pct);
+      if (pct >= 0 && pct <= 50) AppState.transferDiscountPct = pct;
       // Actualizar Ticker Superior Continuo (Marquee estilo Brooki Bakehouse)
       const tickerEls = document.querySelectorAll('.ticker-content');
       if (tickerEls.length > 0 && s.ticker_text) {
@@ -188,6 +192,7 @@ async function fetchCategories() {
     if (data.success) {
       AppState.categories = data.categories;
       renderCategories();
+      renderMaterialFilter(data.materials || []);
     }
   } catch (err) {
     console.warn('No se pudieron obtener las categorías dinámicas');
@@ -196,11 +201,23 @@ async function fetchCategories() {
 
 // --- RENDERIZADO DE LA INTERFAZ ---
 
+// Filtro de material: solo los que tienen joyas en el catálogo
+function renderMaterialFilter(materials) {
+  const select = document.getElementById('metal-filter');
+  if (!select) return;
+  select.innerHTML = `<option value="todos">Todos los materiales</option>` + materials
+    .filter(m => m.count > 0 || m.id === AppState.activeMetal)
+    .map(m => `<option value="${m.id}" ${m.id === AppState.activeMetal ? 'selected' : ''}>${m.label}</option>`)
+    .join('');
+}
+
 function renderCategories() {
   const barEl = document.getElementById('category-filter-bar');
   if (!barEl) return;
 
-  barEl.innerHTML = AppState.categories.map(cat => `
+  // Las categorías sin joyas no se muestran (salvo la elegida)
+  const visible = AppState.categories.filter(cat => cat.id === 'todos' || cat.count > 0 || cat.id === AppState.activeCategory);
+  barEl.innerHTML = visible.map(cat => `
     <button class="cat-btn ${AppState.activeCategory === cat.id ? 'active' : ''}" data-category="${cat.id}">
       <span>${cat.label}</span>
       <span class="cat-count">(${cat.count})</span>
@@ -620,8 +637,8 @@ function openCheckoutModal() {
   const modalContent = document.getElementById('checkout-modal-content');
 
   const subtotal = AppState.cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-  const transferDiscount = subtotal * 0.15;
-  const transferTotal = subtotal - transferDiscount;
+  const discountPct = AppState.transferDiscountPct;
+  const transferTotal = subtotal * (1 - discountPct / 100);
 
   modalContent.innerHTML = `
     <div class="checkout-modal-card" id="checkout-card-container">
@@ -645,28 +662,28 @@ function openCheckoutModal() {
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Nombre y Apellido</label>
-                <input type="text" id="chk-name" class="form-input" placeholder="Ej. Camila Navarro" required value="Camila Navarro">
+                <input type="text" id="chk-name" class="form-input" placeholder="Ej. Camila Navarro" required>
               </div>
               <div class="form-group">
                 <label class="form-label">DNI / CUIL (Requerido p/ Facturación)</label>
-                <input type="text" id="chk-dni" class="form-input" placeholder="Ej. 34.890.123" required value="34890123">
+                <input type="text" id="chk-dni" class="form-input" placeholder="Ej. 34.890.123" required>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Correo Electrónico</label>
-                <input type="email" id="chk-email" class="form-input" placeholder="nombre@ejemplo.com" required value="camila.navarro@gmail.com">
+                <input type="email" id="chk-email" class="form-input" placeholder="nombre@ejemplo.com" required>
               </div>
               <div class="form-group">
                 <label class="form-label">Teléfono / WhatsApp</label>
-                <input type="tel" id="chk-phone" class="form-input" placeholder="Ej. +54 9 11 4050-9988" required value="+54 9 11 4050-9988">
+                <input type="tel" id="chk-phone" class="form-input" placeholder="Ej. +54 9 11 4050-9988" required>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Dirección de Entrega</label>
-              <input type="text" id="chk-address" class="form-input" placeholder="Calle y Altura, Piso / Depto" required value="Av. Alvear 1850, Piso 6B">
+              <input type="text" id="chk-address" class="form-input" placeholder="Calle y Altura, Piso / Depto" required>
             </div>
 
             <div class="form-row">
@@ -687,7 +704,7 @@ function openCheckoutModal() {
               </div>
               <div class="form-group">
                 <label class="form-label">Código Postal (CP)</label>
-                <input type="text" id="chk-zip" class="form-input" placeholder="Ej. C1014AAD" required value="C1014AAD">
+                <input type="text" id="chk-zip" class="form-input" placeholder="Ej. C1014AAD" required>
               </div>
             </div>
           </form>
@@ -726,12 +743,12 @@ function openCheckoutModal() {
             </button>
             <button class="payment-tab-btn ${AppState.activePaymentTab === 'card' ? 'active' : ''}" data-tab="card">
               ${window.ICONS.creditCard}
-              <span>Tarjetas Directas</span>
+              <span>Tarjeta</span>
             </button>
             <button class="payment-tab-btn ${AppState.activePaymentTab === 'transfer' ? 'active' : ''}" data-tab="transfer">
               ${window.ICONS.bank}
               <span>Transferencia</span>
-              <span class="tab-badge-discount">15% OFF</span>
+              <span class="tab-badge-discount">${discountPct}% OFF</span>
             </button>
           </div>
 
@@ -761,52 +778,36 @@ function openCheckoutModal() {
             </button>
           </div>
 
-          <!-- PANEL 2: TARJETAS DIRECTAS CON CUOTAS ARGENTINAS -->
+          <!-- PANEL 2: TARJETA (se cobra en Mercado Pago, los datos nunca pasan por este servidor) -->
           <div class="payment-panel ${AppState.activePaymentTab === 'card' ? 'active' : ''}" id="panel-card">
             <div class="card-brands-row">
               ${window.ICONS.badgeVisa}
               ${window.ICONS.badgeMastercard}
               ${window.ICONS.badgeAmex}
             </div>
-            <form id="direct-card-form" onsubmit="event.preventDefault()">
-              <div class="form-group">
-                <label class="form-label">Número de Tarjeta</label>
-                <input type="text" id="card-num" class="form-input" placeholder="4509 2300 1234 5678" maxlength="19" value="4509 2341 8762 9012">
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.6;">
+              Pagá con tarjeta de crédito o débito en el entorno seguro de Mercado Pago, sin necesidad de tener cuenta. Elegís las cuotas (hasta 6) en el paso siguiente.
+            </p>
+            <div style="background-color: var(--bg-surface); padding: 1rem; border-radius: var(--radius-xs); border: 1px solid var(--border-light); margin-bottom: 1.2rem; font-size: 0.8rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                <span>Total de la Orden:</span>
+                <span style="font-weight: 700;">${formatARS(subtotal)}</span>
               </div>
-              <div class="form-group">
-                <label class="form-label">Nombre del Titular (como figura en el plástico)</label>
-                <input type="text" id="card-holder" class="form-input" placeholder="CAMILA NAVARRO" value="CAMILA NAVARRO">
+              <div style="color: var(--status-success); font-size: 0.75rem;">
+                3 cuotas de ${formatARS(Math.round(subtotal / 3))} o 6 cuotas de ${formatARS(Math.round(subtotal / 6))}
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Vencimiento</label>
-                  <input type="text" id="card-exp" class="form-input" placeholder="MM/AA" maxlength="5" value="08/29">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Código CVV</label>
-                  <input type="password" id="card-cvv" class="form-input" placeholder="123" maxlength="4" value="789">
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Planes de Cuotas Disponibles en Argentina</label>
-                <select id="card-installments" class="form-select">
-                  <option value="1">1 cuota de ${formatARS(subtotal)} (Sin recargo)</option>
-                  <option value="3" selected>3 cuotas SIN INTERÉS de ${formatARS(Math.round(subtotal / 3))}</option>
-                  <option value="6">6 cuotas fijas de ${formatARS(Math.round(subtotal / 6))}</option>
-                </select>
-              </div>
-              <button class="btn-luxury" style="width: 100%; margin-top: 0.5rem;" id="btn-pay-card">
-                ${window.ICONS.lock}
-                <span>Confirmar Pago de ${formatARS(subtotal)}</span>
-              </button>
-            </form>
+            </div>
+            <button class="btn-luxury" style="width: 100%;" id="btn-pay-card">
+              ${window.ICONS.lock}
+              <span>Pagar con Tarjeta</span>
+            </button>
           </div>
 
           <!-- PANEL 3: TRANSFERENCIA BANCARIA CON 15% OFF -->
           <div class="payment-panel ${AppState.activePaymentTab === 'transfer' ? 'active' : ''}" id="panel-transfer">
             <div style="background-color: var(--gold-tint); border: 1px solid var(--gold-light); padding: 0.9rem; border-radius: var(--radius-xs); margin-bottom: 1.2rem;">
               <div style="font-size: 0.8rem; font-weight: 600; color: var(--gold-dark); margin-bottom: 0.2rem;">
-                Beneficio Exclusivo: 15% de Descuento Inmediato
+                Beneficio Exclusivo: ${discountPct}% de Descuento Inmediato
               </div>
               <div style="font-size: 0.75rem; color: var(--text-secondary);">
                 Subtotal regular: <s>${formatARS(subtotal)}</s><br>
@@ -818,7 +819,7 @@ function openCheckoutModal() {
             </p>
             <button class="btn-luxury" style="width: 100%;" id="btn-pay-transfer">
               ${window.ICONS.check}
-              <span>Generar Orden con 15% OFF (${formatARS(transferTotal)})</span>
+              <span>Generar Orden con ${discountPct}% OFF (${formatARS(transferTotal)})</span>
             </button>
           </div>
 
@@ -863,11 +864,9 @@ function openCheckoutModal() {
     });
   });
 
-  // Botón Mercado Pago
+  // Botones Mercado Pago y Tarjeta (ambos van a Checkout Pro)
   document.getElementById('btn-pay-mp').addEventListener('click', handleMercadoPagoCheckout);
-
-  // Botón Tarjeta Directa
-  document.getElementById('btn-pay-card').addEventListener('click', handleDirectCardCheckout);
+  document.getElementById('btn-pay-card').addEventListener('click', handleMercadoPagoCheckout);
 
   // Botón Transferencia
   document.getElementById('btn-pay-transfer').addEventListener('click', handleTransferCheckout);
@@ -883,127 +882,82 @@ function closeCheckoutModal() {
 
 // --- PROCESAMIENTO DE PAGOS CON EL BACKEND ---
 
-async function handleMercadoPagoCheckout() {
-  const btn = document.getElementById('btn-pay-mp');
+// Datos del comprador del formulario de checkout (null si falta algo obligatorio)
+function getCheckoutPayer() {
+  const form = document.getElementById('checkout-shipping-form');
+  if (form && !form.reportValidity()) return null;
+  return {
+    name: document.getElementById('chk-name').value.trim(),
+    dni: document.getElementById('chk-dni').value.trim(),
+    email: document.getElementById('chk-email').value.trim(),
+    phone: document.getElementById('chk-phone').value.trim(),
+    address: document.getElementById('chk-address').value.trim(),
+    province: document.getElementById('chk-province').value,
+    zip: document.getElementById('chk-zip').value.trim()
+  };
+}
+
+// Solo id, talle y cantidad: el precio lo calcula el servidor con el catálogo
+function getCheckoutItems() {
+  return AppState.cart.map(it => ({ id: it.product.id, size: it.size, quantity: it.quantity }));
+}
+
+async function handleMercadoPagoCheckout(event) {
+  const btn = event.currentTarget;
+  const payer = getCheckoutPayer();
+  if (!payer) return;
+
+  const originalHtml = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = `<span>Conectando con Mercado Pago...</span>`;
-
-  const payload = {
-    items: AppState.cart.map(it => ({
-      id: it.product.id,
-      title: `${it.product.name} (${it.size})`,
-      unit_price: it.product.price,
-      quantity: it.quantity
-    })),
-    payer: {
-      name: document.getElementById('chk-name').value,
-      email: document.getElementById('chk-email').value,
-      dni: document.getElementById('chk-dni').value,
-      address: document.getElementById('chk-address').value,
-      province: document.getElementById('chk-province').value
-    }
+  const restoreButton = () => {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   };
 
   try {
     const res = await fetch('/api/checkout/preference', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ items: getCheckoutItems(), payer })
     });
     const result = await res.json();
 
-    if (result.success) {
-      if (result.init_point && result.mode === 'live') {
-        showToast('Redirigiendo a Mercado Pago para abonar de forma segura...');
-        clearCart();
-        setTimeout(() => {
-          window.location.href = result.init_point;
-        }, 600);
-        return;
-      }
-
-      // Mostrar confirmación interactiva
-      renderPaymentSuccess({
-        type: 'mercadopago',
-        order_id: result.order_id,
-        preference_id: result.preference_id,
-        mode: result.mode,
-        init_point: result.init_point,
-        message: result.message || 'Preferencia de Mercado Pago lista.',
-        total: payload.items.reduce((a, b) => a + (b.unit_price * b.quantity), 0)
-      });
-      clearCart();
-    } else {
+    if (!result.success) {
       showToast('Error al conectar con Mercado Pago: ' + (result.error || 'intente nuevamente'));
-      btn.disabled = false;
-      btn.innerHTML = `<span>Continuar con Mercado Pago</span>`;
+      restoreButton();
+      return;
     }
+
+    if (result.mode === 'live' && result.init_point) {
+      // La bolsa se vacía recién cuando Mercado Pago confirma el pago al volver
+      showToast('Redirigiendo a Mercado Pago para abonar de forma segura...');
+      setTimeout(() => {
+        window.location.href = result.init_point;
+      }, 600);
+      return;
+    }
+
+    // Modo prueba (servidor sin Access Token): la orden queda pendiente, no se cobra nada
+    renderPaymentSuccess({
+      type: 'mercadopago',
+      order_id: result.order_id,
+      message: result.message,
+      total: result.total_ars
+    });
   } catch (e) {
     console.error(e);
     showToast('Error de conexión con el servidor de pagos');
-    btn.disabled = false;
-  }
-}
-
-async function handleDirectCardCheckout() {
-  const btn = document.getElementById('btn-pay-card');
-  const cardNum = document.getElementById('card-num').value;
-  const cardHolder = document.getElementById('card-holder').value;
-  const cardCvv = document.getElementById('card-cvv').value;
-  const installments = document.getElementById('card-installments').value;
-  const subtotal = AppState.cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-
-  if (!cardNum || !cardHolder || !cardCvv) {
-    showToast('Por favor completá los datos de la tarjeta');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = `<span>Verificando con la red bancaria...</span>`;
-
-  try {
-    const res = await fetch('/api/checkout/process-card', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        card_number: cardNum,
-        cardholder: cardHolder,
-        cvv: cardCvv,
-        installments: parseInt(installments),
-        total_amount: subtotal,
-        dni: document.getElementById('chk-dni').value
-      })
-    });
-    const result = await res.json();
-
-    if (result.success) {
-      renderPaymentSuccess({
-        type: 'card',
-        order_id: result.order_id,
-        brand: result.brand,
-        last_four: result.last_four,
-        auth_code: result.auth_code,
-        installments: result.installments,
-        installment_amount: result.installment_amount,
-        total_paid: result.total_paid,
-        date: result.date
-      });
-      clearCart();
-    } else {
-      showToast(result.error || 'Tarjeta rechazada');
-      btn.disabled = false;
-      btn.innerHTML = `<span>Confirmar Pago</span>`;
-    }
-  } catch (e) {
-    showToast('Error procesando el pago con tarjeta');
-    btn.disabled = false;
+    restoreButton();
   }
 }
 
 async function handleTransferCheckout() {
   const btn = document.getElementById('btn-pay-transfer');
-  const subtotal = AppState.cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+  const payer = getCheckoutPayer();
+  if (!payer) return;
 
+  const originalHtml = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = `<span>Generando orden con bonificación...</span>`;
 
@@ -1011,11 +965,7 @@ async function handleTransferCheckout() {
     const res = await fetch('/api/checkout/bank-transfer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        total_amount: subtotal,
-        customer_name: document.getElementById('chk-name').value,
-        email: document.getElementById('chk-email').value
-      })
+      body: JSON.stringify({ items: getCheckoutItems(), payer })
     });
     const result = await res.json();
 
@@ -1029,10 +979,15 @@ async function handleTransferCheckout() {
         instructions: result.instructions
       });
       clearCart();
+    } else {
+      showToast(result.error || 'No pudimos generar la orden');
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
     }
   } catch (e) {
     showToast('Error generando la orden de transferencia');
     btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 
@@ -1047,49 +1002,14 @@ function renderPaymentSuccess(data) {
     detailsHtml = `
       <div style="background-color: var(--bg-main); border: 1px solid var(--border-light); padding: 1.5rem; border-radius: var(--radius-xs); width: 100%; max-width: 480px; text-align: left; font-size: 0.85rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="color: var(--text-muted);">Plataforma de Cobro:</span>
-          <strong>Mercado Pago Argentina</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="color: var(--text-muted);">Preferencia Generada:</span>
-          <code style="background: var(--bg-surface); padding: 0.2rem 0.4rem; border-radius: 2px;">${data.preference_id}</code>
+          <span style="color: var(--text-muted);">Estado:</span>
+          <strong>Pendiente de pago (modo prueba)</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
           <span style="color: var(--text-muted);">Monto Total:</span>
           <strong>${formatARS(data.total)}</strong>
         </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--text-muted);">Financiación:</span>
-          <span style="color: var(--status-success); font-weight: 600;">Hasta 6 Cuotas Bancarias</span>
-        </div>
-        ${data.init_point ? `
-          <div style="margin-top: 1.2rem;">
-            <a href="${data.init_point}" class="btn-luxury" style="width: 100%; justify-content: center; text-decoration: none;" id="btn-open-mp-gateway">
-              <span>Abrir Pasarela de Pago Mercado Pago</span>
-            </a>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  } else if (data.type === 'card') {
-    detailsHtml = `
-      <div style="background-color: var(--bg-main); border: 1px solid var(--border-light); padding: 1.5rem; border-radius: var(--radius-xs); width: 100%; max-width: 480px; text-align: left; font-size: 0.85rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="color: var(--text-muted);">Medio de Pago:</span>
-          <strong>${data.brand} (Terminada en ${data.last_four})</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="color: var(--text-muted);">Plan de Financiación:</span>
-          <strong style="color: var(--status-success);">${data.installments} cuota${data.installments > 1 ? 's' : ''} de ${formatARS(data.installment_amount)}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="color: var(--text-muted);">Código de Autorización:</span>
-          <code>${data.auth_code}</code>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--text-muted);">Fecha y Hora:</span>
-          <span>${data.date}</span>
-        </div>
+        <p style="color: var(--text-secondary); line-height: 1.5; margin: 0;">${data.message || ''}</p>
       </div>
     `;
   } else if (data.type === 'transfer') {
@@ -1142,8 +1062,8 @@ function renderPaymentSuccess(data) {
       </h2>
 
       <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 520px; line-height: 1.6;">
-        Tu orden ha sido registrada con el código oficial <strong style="color: var(--text-primary);">${data.order_id}</strong>.
-        Te enviamos los detalles y el número de seguimiento asegurado por Andreani a tu casilla de correo.
+        Tu orden ha sido registrada con el código <strong style="color: var(--text-primary);">${data.order_id}</strong>.
+        Guardalo: es la referencia de tu compra para cualquier consulta con el atelier.
       </p>
 
       ${detailsHtml}
@@ -1161,6 +1081,81 @@ function clearCart() {
   AppState.cart = [];
   saveCartToStorage();
   updateCartUI();
+}
+
+// --- RETORNO DESDE MERCADO PAGO (back_urls: /?checkout=success|pending|failure&order=...) ---
+
+async function handleCheckoutReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const checkout = params.get('checkout');
+  const orderId = params.get('order');
+  if (!['success', 'pending', 'failure'].includes(checkout) || !orderId) return;
+
+  // Limpiar la URL para que recargar la página no repita el aviso
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const paymentId = params.get('payment_id') || params.get('collection_id') || '';
+  // Sin verificación del servidor no se confía en el "status" de la URL
+  let status = checkout === 'failure' ? 'rejected' : 'pending';
+  try {
+    // El estado real lo verifica el servidor contra la API de Mercado Pago
+    const res = await fetch('/api/checkout/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, payment_id: paymentId })
+    });
+    const result = await res.json();
+    // Un "failure" solo cambia si Mercado Pago igual registró un pago aprobado
+    if (result.success && result.payment_status && (checkout !== 'failure' || result.payment_status === 'approved')) {
+      status = result.payment_status;
+    }
+  } catch (e) {
+    console.warn('No se pudo verificar el pago', e);
+  }
+
+  const paid = status === 'approved';
+  const inProgress = ['pending', 'in_process', 'authorized'].includes(status);
+  if (paid || inProgress) clearCart();
+
+  const title = paid ? '¡Pago aprobado!' : (inProgress ? 'Tu pago está en proceso' : 'El pago no se completó');
+  const text = paid
+    ? 'Mercado Pago confirmó tu pago. Ya estamos preparando tu pieza en el taller.'
+    : (inProgress
+      ? 'Mercado Pago está procesando el pago. Te avisamos apenas se acredite; tu pedido queda reservado.'
+      : 'No se realizó ningún cobro. Tu bolsa sigue guardada para que puedas intentarlo de nuevo.');
+
+  const modalOverlay = document.getElementById('checkout-modal-overlay');
+  const modalContent = document.getElementById('checkout-modal-content');
+  if (!modalOverlay || !modalContent) {
+    showToast(title);
+    return;
+  }
+
+  modalContent.innerHTML = `
+    <div class="checkout-modal-card" id="checkout-card-container">
+      <div class="order-confirmation-box">
+        <div class="confirmation-icon">
+          ${paid || inProgress ? window.ICONS.check : window.ICONS.close}
+        </div>
+        <span style="font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-dark); font-weight: 600;">
+          Pedido ${orderId}
+        </span>
+        <h2 class="serif-font" style="font-size: 2.4rem; color: var(--text-primary); margin: -0.5rem 0 0.5rem;">
+          ${title}
+        </h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 520px; line-height: 1.6;">
+          ${text}
+        </p>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          ${paid || inProgress
+            ? `<button class="btn-luxury" onclick="closeCheckoutModal()"><span>Volver a la Tienda</span></button>`
+            : `<button class="btn-luxury" onclick="closeCheckoutModal(); openCartDrawer();"><span>Volver a mi Bolsa</span></button>`}
+        </div>
+      </div>
+    </div>
+  `;
+  modalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function copyToClipboard(text, successMsg = 'Copiado al portapapeles') {

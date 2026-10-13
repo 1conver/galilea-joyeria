@@ -15,7 +15,9 @@ const AdminState = {
   filterStatus: 'all',
   filterShipping: 'all',
   filterMethod: 'all',
-  searchQuery: ''
+  searchQuery: '',
+  options: { categories: [], materials: [] },
+  optionsDraft: null
 };
 
 const formatARS = (amount) => {
@@ -177,6 +179,7 @@ function switchModule(moduleName) {
 
 // Inicializar datos del dashboard
 async function initDashboard() {
+  fetchCatalogOptions();
   setupFilterListeners();
   setupSettingsForm();
   setupUserCreationForm();
@@ -189,7 +192,9 @@ async function initDashboard() {
 
 async function fetchStats() {
   try {
-    const res = await fetch('/api/admin/stats');
+    const res = await fetch('/api/admin/stats', {
+      headers: { 'Authorization': `Bearer ${AdminState.token}` }
+    });
     const data = await res.json();
     if (data.success) {
       AdminState.stats = data.stats;
@@ -217,7 +222,9 @@ async function fetchOrders() {
     if (AdminState.filterMethod !== 'all') url.searchParams.set('method', AdminState.filterMethod);
     if (AdminState.searchQuery) url.searchParams.set('q', AdminState.searchQuery);
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${AdminState.token}` }
+    });
     const data = await res.json();
     if (data.success) {
       AdminState.orders = data.orders;
@@ -334,7 +341,10 @@ async function quickApproveTransfer(orderId) {
   try {
     const res = await fetch(`/api/admin/orders/${orderId}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
       body: JSON.stringify({ payment_status: 'approved', shipping_status: 'in_workshop' })
     });
     const result = await res.json();
@@ -360,7 +370,10 @@ async function dispatchOrder(orderId, trackingNumber) {
   try {
     const res = await fetch(`/api/admin/orders/${orderId}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
       body: JSON.stringify({ shipping_status: 'in_transit', tracking_number: trackingNumber })
     });
     const result = await res.json();
@@ -379,7 +392,10 @@ async function markAsDelivered(orderId) {
   try {
     const res = await fetch(`/api/admin/orders/${orderId}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
       body: JSON.stringify({ shipping_status: 'delivered' })
     });
     const result = await res.json();
@@ -809,25 +825,25 @@ function openCreateProductModal() {
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
-            <label class="form-label">Categoría</label>
+            <label class="form-label">Tipo de joya</label>
             <select id="new-prod-category" class="form-select">
-              <option value="anillos">Anillos</option>
-              <option value="collares">Collares</option>
-              <option value="aros">Aros</option>
-              <option value="pulseras">Pulseras</option>
-              <option value="diamantes">Alta Joyería & Diamantes</option>
-              <option value="limitada">Edición Limitada</option>
+              ${optionTags(AdminState.options.categories, '')}
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Metal Noble</label>
+            <label class="form-label">Material</label>
             <select id="new-prod-metal" class="form-select">
-              <option value="Oro 18K">Oro 18K Amarillo</option>
-              <option value="Oro Blanco 18K">Oro Blanco 18K</option>
-              <option value="Plata 925">Plata 925</option>
-              <option value="Plata 925 Bañada en Oro">Plata 925 Bañada en Oro 24K</option>
+              ${optionTags(AdminState.options.materials, '')}
             </select>
           </div>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--admin-text-muted); margin: -0.6rem 0 1.2rem;">
+          ¿Falta alguna opción? Agregala en <a href="#" onclick="event.preventDefault(); openOptionsModal();" style="color: var(--admin-rose-deep); font-weight: 600;">Categorías y materiales</a>.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label">Talles o medidas (separados por coma)</label>
+          <input type="text" id="new-prod-sizes" class="form-input" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
         </div>
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -941,7 +957,8 @@ async function handleCreateProductSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('new-prod-name').value.trim();
   const category = document.getElementById('new-prod-category').value;
-  const metal = document.getElementById('new-prod-metal').value;
+  const material = document.getElementById('new-prod-metal').value;
+  const sizes = document.getElementById('new-prod-sizes').value;
   const price = parseFloat(document.getElementById('new-prod-price').value);
   const badge = document.getElementById('new-prod-badge').value.trim();
   const primary_image = document.getElementById('new-prod-img').value.trim();
@@ -960,13 +977,14 @@ async function handleCreateProductSubmit(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AdminState.token}`
       },
-      body: JSON.stringify({ name, category, metal, price, badge, primary_image, secondary_image, description })
+      body: JSON.stringify({ name, category, material, sizes, price, badge, primary_image, secondary_image, description })
     });
     const result = await res.json();
     if (result.success) {
       showToast(`Joya '${name}' incorporada al catálogo`);
       closeAdminModal();
       fetchCatalog();
+      fetchCatalogOptions();
     } else {
       showToast(result.error || 'Error al incorporar pieza');
     }
@@ -1085,25 +1103,23 @@ function openEditProductModal(productId) {
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
-            <label class="form-label">Categoría</label>
+            <label class="form-label">Tipo de joya</label>
             <select id="edit-prod-category" class="form-select">
-              <option value="anillos" ${prod.category === 'anillos' ? 'selected' : ''}>Anillos</option>
-              <option value="collares" ${prod.category === 'collares' ? 'selected' : ''}>Collares</option>
-              <option value="aros" ${prod.category === 'aros' ? 'selected' : ''}>Aros</option>
-              <option value="pulseras" ${prod.category === 'pulseras' ? 'selected' : ''}>Pulseras</option>
-              <option value="diamantes" ${prod.category === 'diamantes' ? 'selected' : ''}>Alta Joyería & Diamantes</option>
-              <option value="limitada" ${prod.category === 'limitada' ? 'selected' : ''}>Edición Limitada</option>
+              ${optionTags(AdminState.options.categories, prod.category, prod.category_label)}
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Metal Noble</label>
+            <label class="form-label">Material</label>
             <select id="edit-prod-metal" class="form-select">
-              <option value="Oro 18K" ${prod.metal === 'Oro 18K' ? 'selected' : ''}>Oro 18K Amarillo</option>
-              <option value="Oro Blanco 18K" ${prod.metal === 'Oro Blanco 18K' ? 'selected' : ''}>Oro Blanco 18K</option>
-              <option value="Plata 925" ${prod.metal === 'Plata 925' ? 'selected' : ''}>Plata 925</option>
-              <option value="Plata 925 Bañada en Oro" ${prod.metal && prod.metal.includes('Bañada') ? 'selected' : ''}>Plata 925 Bañada en Oro 24K</option>
+              ${optionTags(AdminState.options.materials, prod.metal_group, prod.metal)}
             </select>
+            <span style="font-size: 0.72rem; color: var(--admin-text-muted);">Actual: ${prod.metal || '-'}</span>
           </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label">Talles o medidas (separados por coma)</label>
+          <input type="text" id="edit-prod-sizes" class="form-input" value="${(prod.sizes || []).join(', ')}" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
         </div>
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -1159,8 +1175,10 @@ function openEditProductModal(productId) {
 async function handleEditProductSubmit(e, productId) {
   e.preventDefault();
   const name = document.getElementById('edit-prod-name').value.trim();
+  const prod = (AdminState.products || []).find(p => p.id === productId) || {};
   const category = document.getElementById('edit-prod-category').value;
-  const metal = document.getElementById('edit-prod-metal').value;
+  const material = document.getElementById('edit-prod-metal').value;
+  const sizes = document.getElementById('edit-prod-sizes').value;
   const price = parseFloat(document.getElementById('edit-prod-price').value);
   const badge = document.getElementById('edit-prod-badge').value.trim();
   const in_stock = document.getElementById('edit-prod-stock').checked;
@@ -1177,8 +1195,10 @@ async function handleEditProductSubmit(e, productId) {
       },
       body: JSON.stringify({
         name,
-        category,
-        metal,
+        // Solo si cambiaron: así no se pisan nombres especiales como "Plata 925 & Cristales"
+        category: category !== prod.category ? category : undefined,
+        material: material !== prod.metal_group ? material : undefined,
+        sizes,
         price,
         badge,
         in_stock,
@@ -1192,6 +1212,7 @@ async function handleEditProductSubmit(e, productId) {
       showToast(`Joya '${name}' actualizada con éxito`);
       closeAdminModal();
       fetchCatalog();
+      fetchCatalogOptions();
     } else {
       showToast(result.error || 'Error al actualizar la joya');
     }
@@ -1227,6 +1248,159 @@ async function deleteProduct(productId, jewelName) {
 }
 
 
+// --- CATEGORÍAS Y MATERIALES CONFIGURABLES ---
+
+async function fetchCatalogOptions() {
+  try {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
+    if (data.success) {
+      AdminState.options = {
+        categories: data.categories.filter(c => c.id !== 'todos'),
+        materials: data.materials || []
+      };
+      renderCatalogCategoryFilter();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderCatalogCategoryFilter() {
+  const select = document.getElementById('catalog-category-filter');
+  if (!select) return;
+  const current = AdminState.catalogCategory || 'todos';
+  select.innerHTML = `<option value="todos">Todas las categorías</option>` +
+    AdminState.options.categories.map(c => `<option value="${c.id}" ${c.id === current ? 'selected' : ''}>${c.label}</option>`).join('');
+}
+
+// <option> de una lista; si el valor actual ya no está en la lista se agrega para no perderlo
+function optionTags(list, selectedId, fallbackLabel) {
+  const items = list.slice();
+  if (selectedId && !items.some(o => o.id === selectedId)) {
+    items.unshift({ id: selectedId, label: fallbackLabel || selectedId });
+  }
+  return items.map(o => `<option value="${o.id}" ${o.id === selectedId ? 'selected' : ''}>${o.label}</option>`).join('');
+}
+
+function openOptionsModal() {
+  const overlay = document.getElementById('admin-modal-overlay');
+  const container = document.getElementById('admin-modal-content');
+  // Copia editable: los cambios se aplican recién al guardar
+  AdminState.optionsDraft = {
+    categories: AdminState.options.categories.map(o => ({ ...o })),
+    materials: AdminState.options.materials.map(o => ({ ...o }))
+  };
+
+  container.innerHTML = `
+    <div class="admin-modal-card" style="max-width: 760px;">
+      <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
+      <h2 class="admin-modal-title">Categorías y materiales</h2>
+      <p class="admin-modal-subtitle">Son las opciones que aparecen al dar de alta o editar una joya y en los filtros de la tienda. Las que tienen joyas asignadas no se pueden quitar.</p>
+
+      <div class="options-manager-grid">
+        <div class="options-manager-col">
+          <h3 class="options-manager-title">Tipos de joya</h3>
+          <div class="option-chip-list" id="opt-list-categories"></div>
+          <form class="option-add-row" onsubmit="addCatalogOption(event, 'categories')">
+            <input type="text" id="opt-new-categories" class="form-input" maxlength="60" placeholder="Ej. Brazaletes, Llaveros...">
+            <button type="submit" class="btn-op-action">Agregar</button>
+          </form>
+        </div>
+        <div class="options-manager-col">
+          <h3 class="options-manager-title">Materiales</h3>
+          <div class="option-chip-list" id="opt-list-materials"></div>
+          <form class="option-add-row" onsubmit="addCatalogOption(event, 'materials')">
+            <input type="text" id="opt-new-materials" class="form-input" maxlength="60" placeholder="Ej. Acero blanco, Rodio...">
+            <button type="submit" class="btn-op-action">Agregar</button>
+          </form>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 1.6rem;">
+        <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
+        <button type="button" class="btn-luxury" id="btn-save-options" onclick="saveCatalogOptions()">
+          <span>Guardar opciones</span>
+        </button>
+      </div>
+    </div>
+  `;
+  renderOptionChips('categories');
+  renderOptionChips('materials');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderOptionChips(kind) {
+  const el = document.getElementById(`opt-list-${kind}`);
+  if (!el) return;
+  el.innerHTML = AdminState.optionsDraft[kind].map((o, idx) => `
+    <span class="option-chip">
+      <span>${o.label}</span>
+      ${o.count ? `<span class="option-chip-count" title="Joyas con esta opción">${o.count}</span>` : ''}
+      <button type="button" class="option-chip-remove" onclick="removeCatalogOption('${kind}', ${idx})"
+        ${o.count ? `disabled title="Hay ${o.count} joya${o.count > 1 ? 's' : ''} con esta opción"` : 'title="Quitar"'}>×</button>
+    </span>
+  `).join('');
+}
+
+function addCatalogOption(e, kind) {
+  e.preventDefault();
+  const input = document.getElementById(`opt-new-${kind}`);
+  const label = input.value.replace(/[<>"]/g, '').replace(/\s+/g, ' ').trim();
+  if (!label) return;
+  const list = AdminState.optionsDraft[kind];
+  if (list.some(o => o.label.toLowerCase() === label.toLowerCase())) {
+    showToast('Esa opción ya está en la lista');
+    return;
+  }
+  list.push({ label, count: 0 });
+  input.value = '';
+  renderOptionChips(kind);
+}
+
+function removeCatalogOption(kind, idx) {
+  const list = AdminState.optionsDraft[kind];
+  if (list[idx] && list[idx].count) return;
+  if (list.length <= 1) {
+    showToast('Tiene que quedar al menos una opción');
+    return;
+  }
+  list.splice(idx, 1);
+  renderOptionChips(kind);
+}
+
+async function saveCatalogOptions() {
+  const btn = document.getElementById('btn-save-options');
+  const strip = list => list.map(o => (o.id ? { id: o.id, label: o.label } : { label: o.label }));
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
+      body: JSON.stringify({
+        categories: strip(AdminState.optionsDraft.categories),
+        materials: strip(AdminState.optionsDraft.materials)
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('Categorías y materiales actualizados');
+      closeAdminModal();
+      await fetchCatalogOptions();
+    } else {
+      showToast(result.error || 'No se pudieron guardar las opciones');
+      btn.disabled = false;
+    }
+  } catch (err) {
+    showToast('Error de conexión');
+    btn.disabled = false;
+  }
+}
+
 // =========================================================================
 // MÓDULO 3: OFERTAS & TEXTOS DE PORTADA (SOLO ADMIN)
 // =========================================================================
@@ -1243,8 +1417,14 @@ async function fetchSettings() {
       document.getElementById('set-discount').value = s.transfer_discount_pct || 15;
       document.getElementById('set-hero-title').value = s.hero_title || '';
       document.getElementById('set-hero-desc').value = s.hero_desc || '';
+      // El Access Token nunca vuelve del servidor: solo se indica si está configurado
       const mpTokenInput = document.getElementById('set-mp-access-token');
-      if (mpTokenInput) mpTokenInput.value = s.mercadopago_access_token || '';
+      if (mpTokenInput) {
+        mpTokenInput.value = '';
+        mpTokenInput.placeholder = s.mercadopago_configured
+          ? 'Access Token configurado (oculto). Pegá uno nuevo solo para reemplazarlo'
+          : 'Pegá aquí tu Access Token (APP_USR-...)';
+      }
       const mpPubInput = document.getElementById('set-mp-public-key');
       if (mpPubInput) mpPubInput.value = s.mercadopago_public_key || '';
     }
@@ -1279,7 +1459,8 @@ function setupSettingsForm() {
         });
         const result = await res.json();
         if (result.success) {
-          showToast('Textos y ofertas actualizados en la tienda');
+          showToast(result.message && result.message.includes('Vercel') ? result.message : 'Textos y ofertas actualizados en la tienda');
+          fetchSettings();
         } else {
           showToast(result.error || 'Error guardando ajustes');
         }

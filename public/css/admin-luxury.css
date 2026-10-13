@@ -795,3 +795,76 @@ body.admin-body {
     display: none;
   }
 }
+
+/* Categorías y materiales configurables */
+.options-manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+}
+.options-manager-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--admin-rose-deep);
+  margin-bottom: 0.7rem;
+}
+.option-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  margin-bottom: 0.8rem;
+}
+.option-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.35rem 0.3rem 0.75rem;
+  border: 1.2px solid var(--admin-rose-border);
+  border-radius: 9999px;
+  background: var(--admin-surface-card);
+  font-size: 0.78rem;
+  color: var(--admin-text-main);
+}
+.option-chip-count {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--admin-rose-deep);
+  background: var(--admin-subtle);
+  border-radius: 9999px;
+  padding: 0.05rem 0.4rem;
+}
+.option-chip-remove {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--admin-text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.option-chip-remove:hover:not(:disabled) {
+  background: var(--admin-danger-bg);
+  color: var(--admin-danger-text);
+}
+.option-chip-remove:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.option-add-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.option-add-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .options-manager-grid {
+    grid-template-columns: 1fr;
+  }
+}
