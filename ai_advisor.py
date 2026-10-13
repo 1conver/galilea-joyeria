@@ -18,13 +18,13 @@ Guiar al cliente con máxima elegancia, empatía y conocimiento orfebre en su ex
 
 DOMINIOS DE ASESORÍA:
 1. Joyas y colecciones: Anillos de autor, solitarios, alianzas de boda, collares, gargantillas, aros criollos y pulseras rivières.
-2. Metales nobles de ley: Oro 18K macizo (amarillo, blanco aleado con paladio, rosa) y Plata 925 de ley con acabado espejo antialérgico. Sin baños ni enchapados superficiales.
+2. Materiales: líneas en metales nobles (Oro 18K amarillo, blanco o rosa y Plata 925) y líneas accesibles en acero quirúrgico, bronce platinado o bañado y fantasía. El material exacto de cada pieza figura en su ficha: nunca afirmes que una pieza es de oro o plata maciza si su ficha indica otro material, ni que una pieza bañada o de fantasía no se despinta.
 3. Gemología ética: Diamantes cultivados (lab-grown) carbono neutro certificados IGI/GIA de pureza VVS1/VVS2 y color incoloro F-G; zafiros, esmeraldas y perlas.
 4. Medidas y Talles en Argentina: Sistema métrico de diámetro interno en milímetros (16.5 mm = Talle 12/13; 17.2 mm = Talle 14/15; 18.0 mm = Talle 17/18; 19.0 mm = Talle 20/21). Primer ajuste de talle 100% bonificado sin cargo.
 5. Beneficios comerciales: 3 y 6 cuotas fijas sin interés con todas las tarjetas bancarias mediante Mercado Pago; 15% de descuento directo por Transferencia Bancaria (Alias: GALILEA.JOYAS.ARG).
 6. Envíos y Packaging: Envío gratis asegurado a toda la Argentina por Andreani Custodia Express (24-48h CABA/GBA, 3-5 días interior). Packaging de gala en caja rígida de lino, lazo de satén y certificado de autenticidad.
 7. Atención personalizada y taller: Atelier en Av. Alvear 1850, Buenos Aires. Visitas con cita previa y contacto humano por WhatsApp al +54 9 11 4050-9988.
-8. Garantía y cuidado: Garantía perpetua sobre la ley de los metales; servicio de pulido y revisión anual sin cargo de por vida.
+8. Garantía y cuidado: Garantía perpetua sobre la ley de las piezas de Oro 18K y Plata 925; servicio de pulido y revisión anual sin cargo de por vida. Las piezas bañadas, de bronce o de fantasía requieren cuidado del agua, perfumes y cremas.
 
 GUARDRAIL ESTRICTO:
 Si el usuario consulta sobre temas completamente ajenos a la joyería (fútbol, programación, política, cocina, matemática, religión, etc.):
@@ -283,7 +283,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
         return {
             "reply": (
                 "**GALILEA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.<br><br>"
-                "• **Nobleza Material:** Forjamos alianzas, solitarios, gargantillas y pulseras exclusivamente en metales nobles genuinos (Oro 18K y Plata 925 de ley) sin baños ni enchapados superficiales.<br>"
+                "• **Materiales:** Forjamos alianzas y solitarios en metales nobles (Oro 18K y Plata 925 de ley) y sumamos líneas accesibles en acero quirúrgico, bronce y fantasía. Cada ficha indica el material exacto.<br>"
                 "• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.<br>"
                 "• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo."
             ),
@@ -419,8 +419,11 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['mojar', 'se puede mojar', 'agua', 'ducha', 'pileta', 'mar', 'bano', 'se arruina']):
         return {
             "reply": (
-                "¡Sí! Todas nuestras creaciones de **Oro 18K macizo y Plata 925 de ley** son metales nobles macizos y no enchapados, por lo que **no se pelan ni se despintan con el agua cotidiana ni en la ducha**.<br><br>"
-                "• **Recomendación orfebre:** Para conservar el lustre de pulido espejo como el primer día, aconsejamos retirar las piezas antes de ingresar a piletas con cloro intenso o aplicar fragancias y cremas directamente sobre ellas.<br>"
+                "Depende del material, que figura en la ficha de cada pieza:<br><br>"
+                "• **Oro 18K y Plata 925 macizos:** no se pelan ni se despintan con el agua cotidiana ni en la ducha.<br>"
+                "• **Acero quirúrgico:** resiste el agua y no se oxida, ideal para uso diario.<br>"
+                "• **Piezas bañadas, enchapadas, de bronce o fantasía:** conviene sacarlas para bañarte, ir al mar o a la pileta, y evitar perfumes y cremas sobre ellas para que el baño dure más.<br>"
+                "• **Recomendación orfebre:** en todos los casos, retirá las piezas antes de piletas con cloro intenso.<br>"
                 "• **Beneficio perpetuo:** Recordá que tenés **mantenimiento y pulido anual bonificado de por vida** en nuestro atelier."
             ),
             "products": matched,
@@ -496,11 +499,11 @@ def generate_local_response(raw_query: str, products: list) -> dict:
     if any(k in norm for k in ['oro', 'plata', 'metal', 'metales', '18k', '925', 'blanco', 'rosa', 'amarillo', 'despinta', 'enchapado', 'macizo', 'rodio']):
         return {
             "reply": (
-                "En **GALILEA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:<br><br>"
+                "En **GALILEA Atelier** trabajamos líneas en metales nobles y líneas accesibles; el material exacto figura en la ficha de cada pieza:<br><br>"
                 "• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.<br>"
                 "• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.<br>"
-                "• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo antialérgico.<br><br>"
-                "Prescindimos de baños superficiales perecederos para que cada joya conviva con tu piel de generación en generación."
+                "• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo.<br>"
+                "• **Líneas accesibles:** acero quirúrgico (no se oxida), bronce platinado o bañado y fantasía fina, con baños que conviene cuidar del agua y los perfumes."
             ),
             "products": matched,
             "suggestions": ["Joyas en Oro 18K", "Joyas en Plata 925", "Garantía perpetua"]

@@ -1846,7 +1846,7 @@ function generateAIResponse(rawQuery) {
   // 4. Quiénes son / Sobre la marca / Historia
   if (['quienes son', 'quien sos', 'sobre ustedes', 'marca galilea', 'historia', 'que es galilea'].some(k => norm.includes(k))) {
     return {
-      text: `**GALILEA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\n• **Nobleza Material:** Forjamos alianzas, solitarios, gargantillas y pulseras exclusivamente en metales nobles genuinos (Oro 18K y Plata 925 de ley) sin baños ni enchapados superficiales.\n• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.\n• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo.`,
+      text: `**GALILEA Atelier** es una casa argentina de alta joyería y orfebrería de autor ubicada en Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\n• **Materiales:** Forjamos alianzas y solitarios en metales nobles (Oro 18K y Plata 925 de ley) y sumamos líneas accesibles en acero quirúrgico, bronce y fantasía. Cada ficha indica el material exacto.\n• **Sostenibilidad:** Incorporamos diamantes cultivados en laboratorio (lab-grown) carbono neutro certificados VVS, garantizando la misma pureza y dureza 10 Mohs con impacto ambiental positivo.\n• **Atelier:** Contamos con taller propio para ajustes, grabados láser de precisión y mantenimiento perpetuo.`,
       products: matched,
       suggestions: ["Ver Colección Destacada", "Dónde estamos ubicados", "Hablar con un orfebre"]
     };
@@ -1936,7 +1936,7 @@ function generateAIResponse(rawQuery) {
   // 14. ¿Se pueden mojar? / Ducha / Pileta / Mar
   if (['mojar', 'se puede mojar', 'agua', 'ducha', 'pileta', 'mar', 'bano', 'se arruina'].some(k => norm.includes(k))) {
     return {
-      text: `¡Sí! Todas nuestras creaciones de **Oro 18K macizo y Plata 925 de ley** son metales nobles macizos y no enchapados, por lo que **no se pelan ni se despintan con el agua cotidiana ni en la ducha**.\n\n• **Recomendación orfebre:** Para conservar el lustre de pulido espejo como el primer día, aconsejamos retirar las piezas antes de ingresar a piletas con cloro intenso o aplicar fragancias y cremas directamente sobre ellas.\n• **Beneficio perpetuo:** Recordá que tenés **mantenimiento y pulido anual bonificado de por vida** en nuestro atelier.`,
+      text: `Depende del material, que figura en la ficha de cada pieza:\n\n• **Oro 18K y Plata 925 macizos:** no se pelan ni se despintan con el agua cotidiana ni en la ducha.\n• **Acero quirúrgico:** resiste el agua y no se oxida, ideal para uso diario.\n• **Piezas bañadas, enchapadas, de bronce o fantasía:** conviene sacarlas para bañarte, ir al mar o a la pileta, y evitar perfumes y cremas sobre ellas para que el baño dure más.\n• **Recomendación orfebre:** en todos los casos, retirá las piezas antes de piletas con cloro intenso.\n• **Beneficio perpetuo:** Recordá que tenés **mantenimiento y pulido anual bonificado de por vida** en nuestro atelier.`,
       products: matched,
       suggestions: ["Consejos de limpieza", "Joyas en Oro 18K", "Mantenimiento gratuito"]
     };
@@ -1990,7 +1990,7 @@ function generateAIResponse(rawQuery) {
   // 20. Metales Nobles (Oro 18k, Oro Blanco, Plata 925)
   if (['oro', 'plata', 'metal', 'metales', '18k', '925', 'blanco', 'rosa', 'amarillo', 'despinta', 'enchapado', 'macizo', 'rodio'].some(k => norm.includes(k))) {
     return {
-      text: `En **GALILEA Atelier** forjamos nuestras piezas exclusivamente en metales nobles macizos de primera ley:\n\n• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.\n• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.\n• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo antialérgico.\n\nPrescindimos de baños superficiales perecederos para que cada joya conviva con tu piel de generación en generación.`,
+      text: `En **GALILEA Atelier** trabajamos líneas en metales nobles y líneas accesibles; el material exacto figura en la ficha de cada pieza:\n\n• **Oro 18K Amarillo Macizo (750‰):** Nobleza perpetua. No se despinta, no pierde su brillo ni se desgasta con los años.\n• **Oro Blanco 18K:** Aleación de alta orfebrería con paladio y terminación de rodio electrolítico para un brillo níveo inalterable.\n• **Plata 925 de Ley:** Plata esterlina maciza forjada y pulida artesanalmente con acabado espejo.\n• **Líneas accesibles:** acero quirúrgico (no se oxida), bronce platinado o bañado y fantasía fina, con baños que conviene cuidar del agua y los perfumes.`,
       products: matched,
       suggestions: ["Joyas en Oro 18K", "Joyas en Plata 925", "Garantía perpetua"]
     };
