@@ -6,3 +6,6 @@ __pycache__/
 node_modules/
 
 .vercel
+
+# Cuentas creadas desde el panel (tienen hash de contraseña)
+data/users_extra.json

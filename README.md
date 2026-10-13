@@ -1,40 +1,43 @@
 # GALILEA — Joyería contemporánea
 
-Tienda + panel `/admin` + backend Python (aiohttp). `python server.py` y abrí http://localhost:3000.
-`server.py` lee el archivo `.env` automáticamente (copiá `.env.example` a `.env`).
+Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http://localhost:3000
+(lee `.env` automáticamente; copiá `.env.example` a `.env`). En Vercel corre `api/index.py`.
+
+## Cómo está armado
+- `api_core.py`: toda la API, una sola vez. `server.py` (local, aiohttp) y `api/index.py` (Vercel) solo la conectan.
+- `store.py`: dónde se guardan los datos. Local: archivos en `data/`. Vercel con Upstash Redis: en Redis
+  (no se pierde nada). Vercel sin Redis: temporal en `/tmp` (se borra cada tanto). El panel muestra cuál está activo.
+- `payments.py` (Mercado Pago y transferencia), `catalog.py` (categorías, materiales, talles y stock),
+  `notify.py` (emails), `uploads.py` (fotos), `auth.py` (contraseñas y sesiones).
+
+## Vercel: qué hay que conectar
+1. **Storage → Upstash Redis** (Marketplace) conectado al proyecto: guarda pedidos, stock, joyas y ajustes.
+   La primera vez copia el catálogo de `data/`; después el catálogo se maneja desde el panel.
+2. **Storage → Blob** (acceso público) conectado al proyecto: guarda las fotos que se suben desde el panel.
+3. Variables de entorno: `MERCADOPAGO_ACCESS_TOKEN`, `SITE_URL=https://www.galilea.online`, `SESSION_SECRET`,
+   `MERCADOPAGO_WEBHOOK_SECRET`, y para emails `SMTP_USER` + `SMTP_PASSWORD` (casilla de Hostinger).
+4. Después de cada cambio de variables o de Storage: **Redeploy**.
 
 ## Mercado Pago (Checkout Pro)
-- `POST /api/checkout/preference` crea la orden **pendiente** con precios del catálogo (nunca del cliente) y devuelve `init_point` (la tienda redirige ahí). Tarjeta y Mercado Pago usan este mismo flujo: los datos de tarjeta nunca pasan por nuestro servidor (`/api/checkout/process-card` → 410).
-- La orden pasa a *approved* solo cuando la API de MP lo confirma: por webhook (`POST /api/checkout/webhook`) o al volver a la tienda (`POST /api/checkout/confirm`, verifica el `payment_id` contra MP). Si el monto no coincide queda *en revisión*.
-- Sin `MERCADOPAGO_ACCESS_TOKEN` funciona en modo prueba: crea la orden pendiente y no cobra nada.
-- La transferencia también calcula el total en el servidor (con el % de descuento del panel).
+- La orden se crea **pendiente** con precios y stock del catálogo (nunca del cliente) y pasa a *approved* solo
+  cuando la API de MP lo confirma: webhook (`/api/checkout/webhook`) o vuelta a la tienda (`/api/checkout/confirm`).
+  Si el monto no coincide queda *en revisión*.
+- Al aprobarse: se descuenta el stock y se avisa al cliente por email (una sola vez, aunque lleguen webhook y vuelta juntos).
+- Sin `MERCADOPAGO_ACCESS_TOKEN` funciona en modo prueba (orden pendiente, no cobra).
+- Prueba: usuario comprador de prueba + tarjeta de prueba con titular `APRO` (aprobado), `OTHE` (rechazado), `CONT` (pendiente).
 
-### Probar en local (credenciales de prueba)
-1. En `.env`: `MERCADOPAGO_ACCESS_TOKEN` de prueba y `SITE_URL=http://localhost:3000`.
-2. `python server.py`, agregá una joya a la bolsa y pagá con Mercado Pago o Tarjeta.
-3. En MP, en una ventana de incógnito, iniciá sesión con el **usuario comprador de prueba** y pagá con una tarjeta de prueba (titular `APRO` = aprobado, `OTHE` = rechazado, DNI 12345678).
-4. En local MP no puede volver solo (`auto_return` exige https) ni mandar el webhook: tocá **"Volver al sitio"** y la tienda verifica el pago. El pedido aparece en `/admin` como aprobado y pasa a taller.
+## Pedidos y avisos al cliente
+- Emails automáticos: transferencia (con datos bancarios), pago confirmado, despachado (con link de Andreani) y entregado.
+- En el panel, cada pedido tiene un botón de **WhatsApp** con el mensaje armado según su estado.
+- **Seguí tu pedido**: el cliente pone código + email y ve el estado, el historial y el link de Andreani
+  (también se abre desde `/?pedido=CODIGO`, el link que va en los emails). No hay cuentas de cliente.
 
-### Producción
-1. Credenciales **productivas** de la cuenta real en `MERCADOPAGO_ACCESS_TOKEN` (variable de entorno; en Vercel: Settings → Environment Variables).
-2. `SITE_URL=https://tudominio` (con https se activan `auto_return` y `notification_url`).
-3. En el panel de MP: Webhooks → evento *Pagos* → `SITE_URL/api/checkout/webhook`, y copiá la clave secreta a `MERCADOPAGO_WEBHOOK_SECRET`.
-4. `SESSION_SECRET` con un valor largo y aleatorio (sin él, las sesiones del panel no duran en Vercel).
+## Catálogo
+- Tipos de joya y materiales configurables desde `/admin` → Catálogo → **Categorías y materiales**.
+- Stock por unidades (vacío = sin control). Al llegar a 0 la joya queda **Agotada** y no se puede comprar.
+- Talles o medidas por joya. Las fotos se achican en el navegador antes de subir.
 
-Lógica de pagos en `payments.py` (la usan `server.py` y `api/index.py`).
-
-## Catálogo: tipos de joya, materiales y talles
-- En `/admin` → Catálogo → **Categorías y materiales** se agregan o quitan opciones (anillos, dijes, tobilleras… / oro, plata, acero quirúrgico, bronce platinado, fantasía…). Las que tienen joyas asignadas no se pueden quitar.
-- Se guardan en `data/settings.json` (`categories`, `materials`); si no están, se usan las sugeridas de `catalog.py`.
-- Cada joya tiene sus talles o medidas (separados por coma; vacío = "Único").
-- En la tienda, el filtro de material y la barra de categorías muestran solo lo que tiene joyas.
-
-## Panel /admin y seguridad
-- Contraseñas guardadas con hash en `data/users.json`. Para cambiar una: `python auth.py <usuario>`.
-- Las sesiones son tokens firmados (`auth.py`), válidos 12 h. Pedidos, KPIs y cambios de estado requieren iniciar sesión.
-- El Access Token cargado desde el panel nunca se devuelve por la API pública.
-- Imágenes subidas: se valida el contenido real (JPG/PNG/WebP/GIF, máx. 6 MB) en `uploads.py`.
-
-## Pendiente antes de publicar en Vercel
-- Vercel no tiene disco persistente: órdenes, ajustes y fotos subidas viven en `/tmp` y se pierden al reciclarse la instancia. Hace falta una base de datos (y un almacenamiento de imágenes) o correr `server.py` en un hosting con disco. Los datos de cada pago con MP igual quedan guardados en Mercado Pago (`metadata` de la preferencia).
-- En Vercel, las joyas que se crean, editan o borran desde el panel también viven en `/tmp` (mismo problema).
+## Seguridad
+- Contraseñas con hash en `data/users.json`; cambiar una: `python auth.py <usuario>`. Las cuentas creadas desde
+  el panel van a la base (local: `data/users_extra.json`, ignorado por git).
+- Sesiones firmadas con `SESSION_SECRET` (12 h). Pedidos y KPIs requieren login; la API pública no expone el token de MP.

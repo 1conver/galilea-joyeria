@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initAIChatAdvisor();
   handleCheckoutReturn();
+  handleTrackingLink();
 });
 
 async function fetchStoreSettings() {
@@ -320,9 +321,11 @@ function renderProducts() {
     const cols = isMobile ? 2 : 4;
     const staggerDelay = ((idx % cols) * 0.12).toFixed(2);
     return `
-      <article class="product-card fade-in-scroll" style="transition-delay: ${staggerDelay}s;" data-product-id="${product.id}">
+      <article class="product-card fade-in-scroll ${product.in_stock === false ? 'is-soldout' : ''}" style="transition-delay: ${staggerDelay}s;" data-product-id="${product.id}">
         <div class="product-media">
-          ${product.badge ? `<span class="card-badge ${badgeClass}">${product.badge}</span>` : ''}
+          ${product.in_stock === false
+            ? `<span class="card-badge card-badge-soldout">Agotado</span>`
+            : (product.badge ? `<span class="card-badge ${badgeClass}">${product.badge}</span>` : '')}
           <img src="${product.primary_image}" alt="${product.name}" class="product-img img-primary" loading="lazy">
           <img src="${product.secondary_image || product.primary_image}" alt="${product.name} en detalle" class="product-img img-secondary" loading="lazy">
           
@@ -331,9 +334,9 @@ function renderProducts() {
               ${window.ICONS.eye}
               <span>Vista Rápida</span>
             </button>
-            <button class="btn-card-action btn-quick-add" data-id="${product.id}">
+            <button class="btn-card-action btn-quick-add" data-id="${product.id}" ${product.in_stock === false ? 'disabled' : ''}>
               ${window.ICONS.bag}
-              <span>Añadir</span>
+              <span>${product.in_stock === false ? 'Agotado' : 'Añadir'}</span>
             </button>
           </div>
         </div>
@@ -366,8 +369,7 @@ function renderProducts() {
       const prod = AppState.products.find(p => p.id === id);
       if (prod) {
         const defaultSize = prod.sizes && prod.sizes.length > 0 ? prod.sizes[0] : 'Único';
-        addToCart(prod, defaultSize, 1);
-        showToast(`"${prod.name}" añadida a la bolsa`);
+        if (addToCart(prod, defaultSize, 1)) showToast(`"${prod.name}" añadida a la bolsa`);
       }
     });
   });
@@ -448,9 +450,11 @@ function openQuickView(product) {
         ${sizesHtml}
 
         <div>
-          <button class="btn-luxury" style="width: 100%; margin-top: 0.8rem;" id="btn-modal-add-cart">
+          ${Number.isInteger(product.stock) && product.stock > 0 && product.stock <= 3
+            ? `<div class="stock-hint">${product.stock === 1 ? '¡Última unidad!' : `Últimas ${product.stock} unidades`}</div>` : ''}
+          <button class="btn-luxury" style="width: 100%; margin-top: 0.8rem;" id="btn-modal-add-cart" ${product.in_stock === false ? 'disabled' : ''}>
             ${window.ICONS.bag}
-            <span>Añadir a la Bolsa de Compras</span>
+            <span>${product.in_stock === false ? 'Agotado' : 'Añadir a la Bolsa de Compras'}</span>
           </button>
         </div>
 
@@ -477,7 +481,7 @@ function openQuickView(product) {
   });
 
   document.getElementById('btn-modal-add-cart').addEventListener('click', () => {
-    addToCart(product, AppState.selectedSize, 1);
+    if (!addToCart(product, AppState.selectedSize, 1)) return;
     closeQuickView();
     openCartDrawer();
     showToast(`"${product.name}" añadida a la bolsa`);
@@ -494,7 +498,28 @@ function closeQuickView() {
 
 // --- BOLSA DE COMPRAS (DRAWER) ---
 
+// Unidades que se pueden agregar (Infinity = sin control de stock)
+function stockLeft(product) {
+  if (product.in_stock === false) return 0;
+  return Number.isInteger(product.stock) ? product.stock : Infinity;
+}
+
+function canAddToCart(product, quantity) {
+  const left = stockLeft(product);
+  const inCart = AppState.cart.filter(item => item.product.id === product.id).reduce((acc, item) => acc + item.quantity, 0);
+  if (left === 0) {
+    showToast(`"${product.name}" está agotada`);
+    return false;
+  }
+  if (inCart + quantity > left) {
+    showToast(`De "${product.name}" ${left === 1 ? 'queda solo 1 unidad' : `quedan solo ${left} unidades`}`);
+    return false;
+  }
+  return true;
+}
+
 function addToCart(product, size = 'Único', quantity = 1) {
+  if (!canAddToCart(product, quantity)) return false;
   const existingIdx = AppState.cart.findIndex(
     item => item.product.id === product.id && item.size === size
   );
@@ -511,10 +536,12 @@ function addToCart(product, size = 'Único', quantity = 1) {
 
   saveCartToStorage();
   updateCartUI();
+  return true;
 }
 
 function updateCartQuantity(index, delta) {
   if (AppState.cart[index]) {
+    if (delta > 0 && !canAddToCart(AppState.cart[index].product, delta)) return;
     AppState.cart[index].quantity += delta;
     if (AppState.cart[index].quantity <= 0) {
       AppState.cart.splice(index, 1);
@@ -1148,7 +1175,8 @@ async function handleCheckoutReturn() {
         </p>
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
           ${paid || inProgress
-            ? `<button class="btn-luxury" onclick="closeCheckoutModal()"><span>Volver a la Tienda</span></button>`
+            ? `<button class="btn-luxury" onclick="openTrackingModal('${orderId.replace(/[^A-Za-z0-9-]/g, '')}')"><span>Seguí tu pedido</span></button>
+               <button class="btn-luxury-outline" onclick="closeCheckoutModal()"><span>Volver a la Tienda</span></button>`
             : `<button class="btn-luxury" onclick="closeCheckoutModal(); openCartDrawer();"><span>Volver a mi Bolsa</span></button>`}
         </div>
       </div>
@@ -1156,6 +1184,120 @@ async function handleCheckoutReturn() {
   `;
   modalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+// --- SEGUÍ TU PEDIDO (código + email, sin cuentas) ---
+
+function escapeTrackingText(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function openTrackingModal(prefillId = '') {
+  closeCartDrawer();
+  const modalOverlay = document.getElementById('checkout-modal-overlay');
+  const modalContent = document.getElementById('checkout-modal-content');
+  if (!modalOverlay || !modalContent) return;
+
+  modalContent.innerHTML = `
+    <div class="checkout-modal-card tracking-card" id="checkout-card-container">
+      <div class="checkout-header">
+        <div>
+          <h2 class="checkout-title">Seguí tu pedido</h2>
+          <span class="checkout-subtitle">Ingresá el código de tu compra y el email con el que la hiciste</span>
+        </div>
+        <button class="btn-close-modal" onclick="closeCheckoutModal()">${window.ICONS.close}</button>
+      </div>
+      <form id="tracking-form" class="tracking-form">
+        <div class="form-group">
+          <label class="form-label" for="track-id">Código de pedido</label>
+          <input type="text" id="track-id" class="form-input" placeholder="Ej. GAL-1A2B3C4D" required value="${String(prefillId).replace(/[^A-Za-z0-9-]/g, '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="track-email">Email</label>
+          <input type="email" id="track-email" class="form-input" placeholder="nombre@ejemplo.com" required autocomplete="email">
+        </div>
+        <button type="submit" class="btn-luxury" id="btn-track">
+          ${window.ICONS.shipping}
+          <span>Ver estado</span>
+        </button>
+      </form>
+      <div id="tracking-result"></div>
+    </div>
+  `;
+  modalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('tracking-form').addEventListener('submit', submitTrackingForm);
+  document.getElementById(prefillId ? 'track-email' : 'track-id').focus();
+}
+
+async function submitTrackingForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-track');
+  const resultEl = document.getElementById('tracking-result');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/orders/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: document.getElementById('track-id').value.trim(),
+        email: document.getElementById('track-email').value.trim()
+      })
+    });
+    const data = await res.json();
+    resultEl.innerHTML = data.success ? renderTrackingResult(data.order)
+      : `<p class="tracking-error">${escapeTrackingText(data.error || 'No encontramos ese pedido')}</p>`;
+  } catch (err) {
+    resultEl.innerHTML = `<p class="tracking-error">No pudimos consultar el pedido. Probá de nuevo en un momento.</p>`;
+  }
+  btn.disabled = false;
+}
+
+function renderTrackingResult(order) {
+  const steps = [
+    ['Pedido recibido', true],
+    ['Pago confirmado', order.payment_status === 'approved'],
+    ['En camino', ['in_transit', 'delivered'].includes(order.shipping_status)],
+    ['Entregado', order.shipping_status === 'delivered']
+  ];
+  const history = (order.history || []).slice().reverse().map(h => `
+    <li><span class="tracking-history-date">${escapeTrackingText(h.at)}</span>${escapeTrackingText(h.label)}</li>
+  `).join('');
+  return `
+    <div class="tracking-result">
+      <div class="tracking-head">
+        <div>
+          <strong>Pedido ${escapeTrackingText(order.id)}</strong>
+          <div class="tracking-sub">${escapeTrackingText(order.date || '')} · ${formatARS(order.total_amount)}</div>
+        </div>
+        <span class="tracking-status">${escapeTrackingText(order.shipping_status_label || order.payment_status_label || '')}</span>
+      </div>
+      <ol class="tracking-steps">
+        ${steps.map(([label, done]) => `<li class="${done ? 'done' : ''}">${label}</li>`).join('')}
+      </ol>
+      ${order.tracking_number ? `
+        <div class="tracking-shipping">
+          <span>Envío ${escapeTrackingText(order.shipping_carrier || 'Andreani')}: <strong>${escapeTrackingText(order.tracking_number)}</strong></span>
+          ${order.tracking_url ? `<a href="${escapeTrackingText(order.tracking_url)}" target="_blank" rel="noopener" class="btn-luxury-outline">Seguir en Andreani</a>` : ''}
+        </div>
+      ` : ''}
+      <ul class="tracking-items">
+        ${(order.items || []).map(it => `<li>${escapeTrackingText(String(it.quantity))} × ${escapeTrackingText(it.name)} <span>(${escapeTrackingText(String(it.size))})</span></li>`).join('')}
+      </ul>
+      ${history ? `<ul class="tracking-history">${history}</ul>` : ''}
+    </div>
+  `;
+}
+
+// Link de los emails: /?pedido=GAL-XXXX abre el seguimiento con el código cargado
+function handleTrackingLink() {
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('pedido');
+  if (!orderId) return;
+  window.history.replaceState({}, '', window.location.pathname);
+  openTrackingModal(orderId);
 }
 
 function copyToClipboard(text, successMsg = 'Copiado al portapapeles') {
@@ -1608,7 +1750,7 @@ function initAIChatAdvisor() {
         const id = btn.getAttribute('data-add-id');
         const prod = (AppState.products || []).find(p => p.id === id);
         if (prod) {
-          addToCart(prod.id, 1, prod.sizes && prod.sizes.length ? prod.sizes[0] : null);
+          if (!addToCart(prod, prod.sizes && prod.sizes.length ? prod.sizes[0] : 'Único', 1)) return;
           btn.textContent = '¡Agregada!';
           btn.style.background = '#3E9E68';
           setTimeout(() => {
@@ -2073,5 +2215,6 @@ window.updateCartQuantity = updateCartQuantity;
 window.removeCartItem = removeCartItem;
 window.copyToClipboard = copyToClipboard;
 window.closeCheckoutModal = closeCheckoutModal;
+window.openTrackingModal = openTrackingModal;
 window.selectNavCategory = selectNavCategory;
 window.initAIChatAdvisor = initAIChatAdvisor;

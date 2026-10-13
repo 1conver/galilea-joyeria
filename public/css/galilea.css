@@ -127,3 +127,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pastel-r
 .hero-floating-badge{left:1.2rem!important;bottom:1.6rem!important;right:auto!important}
 .site-footer p,.site-footer .footer-bottom,.site-footer .footer-bottom-copy,.site-footer div[style*="color"]{color:#E9C3CC!important}
 .site-footer input::placeholder{color:#B98A97}
+
+/* Agotado */
+.card-badge.card-badge-soldout{background:var(--g-ink,#3A1822);color:#fff}
+.product-card.is-soldout .product-img{filter:grayscale(.55);opacity:.8}
+.btn-card-action:disabled,#btn-modal-add-cart:disabled{opacity:.55;cursor:not-allowed}
+.stock-hint{font-size:.78rem;font-weight:600;color:var(--pastel-rose-deep,#8E2F48)}
+
+/* Seguí tu pedido */
+.tracking-card{max-width:620px}
+.tracking-form{display:grid;grid-template-columns:1fr 1fr auto;gap:.8rem;align-items:end;margin-bottom:1.2rem}
+.tracking-form .form-group{margin:0}
+.tracking-error{color:#962332;font-size:.85rem}
+.tracking-result{border:1px solid var(--border-light,#F0D3DA);border-radius:14px;padding:1.2rem;display:grid;gap:1rem}
+.tracking-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.tracking-sub{font-size:.78rem;color:var(--text-muted,#A5808B)}
+.tracking-status{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8E2F48;background:#FDF4F5;border-radius:999px;padding:.3rem .7rem;white-space:nowrap}
+.tracking-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;list-style:none;padding:0;margin:0;counter-reset:step}
+.tracking-steps li{font-size:.72rem;text-align:center;color:var(--text-muted,#A5808B);border-top:3px solid #F0D3DA;padding-top:.45rem}
+.tracking-steps li.done{color:#3A1822;font-weight:600;border-top-color:#C4506B}
+.tracking-shipping{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;font-size:.85rem;background:#FDF4F5;border-radius:10px;padding:.7rem .9rem}
+.tracking-items,.tracking-history{list-style:none;padding:0;margin:0;font-size:.82rem;display:grid;gap:.35rem}
+.tracking-items span{color:var(--text-muted,#A5808B)}
+.tracking-history{border-top:1px solid #F0D3DA;padding-top:.8rem}
+.tracking-history-date{display:inline-block;min-width:8.5rem;color:var(--text-muted,#A5808B)}
+@media (max-width:640px){
+  .tracking-form{grid-template-columns:1fr}
+  .tracking-steps li{font-size:.62rem}
+  .tracking-history-date{display:block;min-width:0}
+}

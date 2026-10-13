@@ -1,9 +1,11 @@
 """Pagos GALILEA: Mercado Pago Checkout Pro + transferencia (sin dependencias externas).
 Reglas: el precio SIEMPRE se calcula en el servidor; una orden solo pasa a
 'approved' cuando Mercado Pago lo confirma (webhook o retorno), consultando su API.
-Lo usan server.py (local) y api/index.py (Vercel)."""
-import os, json, hmac, hashlib, uuid, urllib.request, urllib.error
-from datetime import datetime
+Los pedidos se leen y guardan de a uno con get_order / put_order (ver store.py)."""
+import os, json, hmac, hashlib, time, uuid, urllib.request, urllib.error
+from datetime import datetime, timezone, timedelta
+
+import catalog
 
 MP_API = "https://api.mercadopago.com"
 STATUS = {"approved": "Pago aprobado", "pending": "Pago pendiente", "in_process": "Pago en revisión",
@@ -18,6 +20,13 @@ BANK_DETAILS = {
     "alias": "GALILEA.JOYAS.ARG",
     "tipo_cuenta": "Cuenta Corriente Especial en Pesos"
 }
+ARGENTINA = timezone(timedelta(hours=-3))
+
+def now_ar():
+    return datetime.now(ARGENTINA).strftime("%d/%m/%Y %H:%M")
+
+def add_history(order, label):
+    order.setdefault("history", []).append({"at": now_ar(), "label": label})
 
 def token():
     # 1. Variable de entorno en producción (Vercel o local)
@@ -55,15 +64,19 @@ def _mp(method, path, body=None):
 def price_cart(items, products):
     """Devuelve (líneas, total) usando los precios del catálogo, nunca los del cliente."""
     by_id = {str(p.get("id")): p for p in products}
-    lines, total = [], 0.0
+    lines, total, wanted = [], 0.0, {}
     for it in items or []:
         p = by_id.get(str(it.get("id")))
         qty = int(it.get("quantity", 1) or 1)
         if not p or not 1 <= qty <= 10: raise ValueError("Producto o cantidad inválidos")
-        if p.get("in_stock") is False: raise ValueError(f"{p.get('name', 'La pieza')} está agotada")
+        wanted[p["id"]] = wanted.get(p["id"], 0) + qty
+        left = catalog.available(p)
+        if left == 0: raise ValueError(f"{p.get('name', 'La pieza')} está agotada")
+        if left is not None and wanted[p["id"]] > left:
+            raise ValueError(f"De {p.get('name', 'esa pieza')} queda{'n' if left > 1 else ''} solo {left}")
         price = float(p["price"]); total += price * qty
         lines.append({"id": str(p["id"]), "name": p.get("name", ""), "size": str(it.get("size") or "Estándar")[:30],
-                      "quantity": qty, "price": price, "image": p.get("primary_image", "")})
+                      "quantity": qty, "price": price, "metal": p.get("metal", ""), "image": p.get("primary_image", "")})
     if not lines: raise ValueError("La bolsa está vacía")
     return lines, round(total, 2)
 
@@ -72,20 +85,21 @@ def _customer(payer):
 
 def _new_order(order_id, customer, lines, total, **extra):
     order = {
-        "id": order_id, "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "id": order_id, "date": now_ar(), "created_ts": time.time(),
         "customer": customer, "items": lines, "total_amount": total,
         "payment_method": "mercadopago", "payment_method_label": "Mercado Pago",
         "payment_status": "pending", "payment_status_label": STATUS["pending"],
         "shipping_status": "awaiting_payment", "shipping_status_label": "Esperando pago",
         "shipping_carrier": "Andreani Asegurado", "tracking_number": "", "notes": ""}
     order.update(extra)
+    add_history(order, "Pedido recibido")
     return order
 
-def create_preference(data, products, add_order):
+def create_preference(data, products, put_order):
     customer = _customer(data.get("payer") or {})
     lines, total = price_cart(data.get("items"), products)
     order_id = f"GAL-{uuid.uuid4().hex[:8].upper()}"
-    add_order(_new_order(order_id, customer, lines, total))
+    put_order(_new_order(order_id, customer, lines, total))
     if not token():  # modo prueba: NO aprueba nada, la orden queda pendiente
         return {"success": True, "mode": "sandbox", "order_id": order_id, "total_ars": total,
                 "init_point": f"/?checkout=sandbox&order={order_id}",
@@ -101,8 +115,8 @@ def create_preference(data, products, add_order):
         "items": items,
         "payer": {"name": customer["name"] or "Cliente Galilea"},
         "external_reference": order_id,
-        # Copia de la orden dentro de Mercado Pago: si el servidor perdió el JSON
-        # (Vercel no tiene disco persistente) el webhook la puede reconstruir.
+        # Copia de la orden dentro de Mercado Pago: si el servidor la perdió,
+        # el webhook la puede reconstruir.
         "metadata": {"order_id": order_id, "customer": customer, "total": total,
                      "items": [{k: l[k] for k in ("id", "name", "size", "quantity", "price")} for l in lines]},
         "statement_descriptor": "GALILEA",
@@ -117,24 +131,27 @@ def create_preference(data, products, add_order):
     return {"success": True, "mode": "live", "order_id": order_id, "total_ars": total,
             "preference_id": pref["id"], "init_point": pref["init_point"]}
 
-def create_transfer_order(data, products, discount_pct, add_order):
+def create_transfer_order(data, products, discount_pct, put_order):
     """Orden por transferencia: total con descuento calculado en el servidor; queda
-    'pending_verification' hasta que el admin confirme la acreditación."""
+    'pending_verification' hasta que el admin confirme la acreditación.
+    Devuelve (respuesta para la tienda, orden)."""
     lines, total = price_cart(data.get("items"), products)
     pct = max(0.0, min(float(discount_pct or 0), 50.0))
     final = round(total * (1 - pct / 100), 2)
     order_id = f"GAL-TRF-{uuid.uuid4().hex[:8].upper()}"
-    add_order(_new_order(order_id, _customer(data.get("payer") or data), lines, final,
+    order = _new_order(order_id, _customer(data.get("payer") or data), lines, final,
         payment_method="bank_transfer", payment_method_label=f"Transferencia ({pct:g}% OFF)",
         installments=1, installment_amount=final,
         payment_status="pending_verification", payment_status_label="Pendiente Acreditación CBU",
         shipping_status="pending", shipping_status_label="Aguardando Cobro",
-        notes=f"Total regular: ${total:,.2f} ARS. Descuento aplicado: {pct:g}%."))
-    return {"success": True, "order_id": order_id, "original_amount": total,
-            "discount_applied": f"{pct:g}% OFF por transferencia bancaria",
-            "final_amount": final, "currency": "ARS", "bank_details": BANK_DETAILS,
-            "instructions": (f"Transferí el importe de ${final:,.2f} ARS a nuestro Alias: {BANK_DETAILS['alias']}. "
-                             f"Referencia: {order_id}.")}
+        notes=f"Total regular: ${total:,.2f} ARS. Descuento aplicado: {pct:g}%.")
+    put_order(order)
+    response = {"success": True, "order_id": order_id, "original_amount": total,
+                "discount_applied": f"{pct:g}% OFF por transferencia bancaria",
+                "final_amount": final, "currency": "ARS", "bank_details": BANK_DETAILS,
+                "instructions": (f"Transferí el importe de ${final:,.2f} ARS a nuestro Alias: {BANK_DETAILS['alias']}. "
+                                 f"Referencia: {order_id}.")}
+    return response, order
 
 def _order_from_metadata(pay):
     md = pay.get("metadata") or {}
@@ -145,26 +162,27 @@ def _order_from_metadata(pay):
              for i in md.get("items") or []]
     return _new_order(md["order_id"], customer, lines, float(md.get("total", 0)))
 
-def apply_payment(pay, load_orders, save_orders):
-    """Aplica a la orden el estado de un pago tal como lo informa la API de Mercado Pago."""
-    orders = load_orders()
-    order = next((o for o in orders if o.get("id") == pay.get("external_reference")), None)
-    if not order:
-        order = _order_from_metadata(pay)
-        if not order: return None
-        orders.insert(0, order)
+def apply_payment(pay, get_order, put_order, on_approved=None):
+    """Aplica a la orden el estado de un pago tal como lo informa la API de Mercado Pago.
+    on_approved(order) se llama una vez cuando la orden pasa a aprobada (stock, email)."""
+    order = get_order(pay.get("external_reference")) or _order_from_metadata(pay)
+    if not order: return None
     pid, status = str(pay.get("id", "")), pay.get("status", "pending")
     if order.get("payment_status") == "approved" and status != "approved" and order.get("mp_payment_id") not in (None, "", pid):
         return order  # un intento fallido de otro pago no pisa uno ya aprobado
     if status == "approved" and (pay.get("currency_id", "ARS") != "ARS" or
                                  abs(float(pay.get("transaction_amount", 0)) - float(order["total_amount"])) > 0.01):
         status = "in_process"; order["notes"] = "Monto del pago no coincide: revisar manualmente."
+    was_approved = order.get("payment_status") == "approved"
     order.update(payment_status=status, payment_status_label=STATUS.get(status, status), mp_payment_id=pid)
     if pay.get("installments"): order["installments"] = pay["installments"]
     if pay.get("payment_method_id"): order["payment_method_label"] = f"Mercado Pago ({pay['payment_method_id']})"
     if status == "approved" and order.get("shipping_status") == "awaiting_payment":
         order.update(shipping_status="in_workshop", shipping_status_label="En taller (preparación)")
-    save_orders(orders)
+    if status == "approved" and not was_approved:
+        add_history(order, "Pago aprobado: en preparación en el taller")
+        if on_approved: on_approved(order)
+    put_order(order)
     return order
 
 def _signature_ok(query, headers, data_id):
@@ -176,26 +194,26 @@ def _signature_ok(query, headers, data_id):
     mac = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(mac, parts.get("v1", ""))
 
-def process_webhook(query, body, headers, load_orders, save_orders):
+def process_webhook(query, body, headers, get_order, put_order, on_approved=None):
     data_id = (body.get("data") or {}).get("id") or query.get("data.id") or query.get("id")
     if (body.get("type") or body.get("topic") or query.get("type") or query.get("topic")) != "payment" or not data_id:
         return 200, {"ignored": True}
     if not _signature_ok(query, headers, data_id): return 401, {"error": "firma inválida"}
     if not token(): return 200, {"ignored": "sin token"}
     pay = _mp("GET", f"/v1/payments/{data_id}")  # se confirma contra la API, no contra el body
-    order = apply_payment(pay, load_orders, save_orders)
+    order = apply_payment(pay, get_order, put_order, on_approved)
     return 200, {"ok": True} if order else {"ignored": "orden desconocida"}
 
-def confirm_payment(data, load_orders, save_orders):
+def confirm_payment(data, get_order, put_order, on_approved=None):
     """Retorno desde Checkout Pro (back_url): verifica el pago contra la API de MP.
     Hace falta en local, donde MP no puede mandar el webhook a localhost."""
     order_id = str(data.get("order_id") or "").strip()
     payment_id = str(data.get("payment_id") or "").strip()
-    order = next((o for o in load_orders() if o.get("id") == order_id), None)
+    order = get_order(order_id) if order_id else None
     if payment_id.isdigit() and token():
         pay = _mp("GET", f"/v1/payments/{payment_id}")
         if pay.get("external_reference") != order_id: raise ValueError("El pago no corresponde a esta orden")
-        order = apply_payment(pay, load_orders, save_orders) or order
+        order = apply_payment(pay, get_order, put_order, on_approved) or order
     if not order: raise LookupError("Orden no encontrada")
     return {"success": True, "order_id": order_id, "payment_status": order.get("payment_status"),
             "payment_status_label": order.get("payment_status_label"), "total_amount": order.get("total_amount")}

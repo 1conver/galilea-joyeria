@@ -1,5 +1,10 @@
-"""Imágenes de joyas: se validan por su contenido real (no por la extensión)."""
-import base64, binascii, re
+"""Imágenes de joyas: se validan por su contenido real (no por la extensión) y se guardan en
+Vercel Blob (si BLOB_READ_WRITE_TOKEN está cargado), en public/uploads/ (local) o, como
+último recurso, dentro del producto como data URL."""
+import base64, binascii, json, os, re, secrets, urllib.parse, urllib.request
+
+BLOB_API = "https://vercel.com/api/blob/"
+BLOB_API_VERSION = "12"  # el mismo que usa @vercel/blob 2.8
 
 MAX_BYTES = 6 * 1024 * 1024
 _URL_RE = re.compile(r"^https?://[^\s\"'<>]+$")
@@ -42,3 +47,38 @@ def safe_image_url(url):
         except ValueError:
             return None
     return None
+
+def upload_to_blob(data, ext, mime, token):
+    """Sube a Vercel Blob (acceso público) y devuelve la URL definitiva."""
+    parts = token.split("_")
+    store_id = parts[3] if len(parts) > 3 else ""
+    pathname = f"joyas/joya-{secrets.token_hex(6)}{ext}"
+    req = urllib.request.Request(BLOB_API + "?" + urllib.parse.urlencode({"pathname": pathname}), method="PUT", data=data,
+                                 headers={"authorization": f"Bearer {token}", "x-api-version": BLOB_API_VERSION,
+                                          "x-vercel-blob-store-id": store_id, "x-vercel-blob-access": "public",
+                                          "x-content-type": mime, "x-add-random-suffix": "1"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        url = json.loads(r.read()).get("url", "")
+    if not url.startswith("https://"):
+        raise RuntimeError("Vercel Blob no devolvió una URL")
+    return url
+
+def save_image(data, local_dir=None):
+    """Valida y guarda la imagen. Devuelve (url, aviso). El aviso explica si quedó en un lugar provisorio."""
+    ext, mime = check_image(data)
+    token = os.environ.get("BLOB_READ_WRITE_TOKEN", "").strip()
+    if token:
+        try:
+            return upload_to_blob(data, ext, mime, token), ""
+        except Exception as e:
+            print("Vercel Blob falló:", e)
+            warning = "No se pudo guardar en Vercel Blob; la foto quedó dentro del producto."
+            return f"data:{mime};base64,{base64.b64encode(data).decode()}", warning
+    if local_dir and not os.environ.get("VERCEL"):
+        os.makedirs(local_dir, exist_ok=True)
+        name = f"joya_{secrets.token_hex(8)}{ext}"
+        with open(os.path.join(local_dir, name), "wb") as f:
+            f.write(data)
+        return f"/uploads/{name}", ""
+    return (f"data:{mime};base64,{base64.b64encode(data).decode()}",
+            "Conectá Vercel Blob para que las fotos no queden dentro del producto.")

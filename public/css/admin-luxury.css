@@ -868,3 +868,28 @@ body.admin-body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Estado de la base de datos y los emails */
+.admin-system-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: -0.6rem 0 1.6rem;
+}
+.system-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid;
+}
+.system-ok {
+  background: var(--admin-success-bg);
+  color: var(--admin-success-text);
+  border-color: var(--admin-success-border);
+}
+.system-warn {
+  background: var(--admin-warning-bg);
+  color: var(--admin-warning-text);
+  border-color: var(--admin-warning-border);
+}

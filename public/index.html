@@ -81,6 +81,7 @@
           </div>
 
           <!-- Botón de Bolsa de Compras con Micro-insignia -->
+          <button class="header-btn" aria-label="Seguí tu pedido" title="Seguí tu pedido" onclick="openTrackingModal()"><span data-icon="shipping"></span></button>
           <a href="/admin" class="header-btn header-admin-btn" aria-label="Acceso operarios" title="Acceso operarios"><span data-icon="shield"></span></a>
         <button class="header-btn btn-open-cart" aria-label="Abrir bolsa de compras" title="Bolsa de compras">
             <span data-icon="bag"></span>
@@ -420,6 +421,7 @@
         <div class="fade-in-scroll" style="transition-delay: 0.24s;">
           <div class="footer-col-title">Servicio & Cuidados</div>
           <ul class="footer-links">
+            <li><a href="#" class="footer-link" onclick="event.preventDefault(); openTrackingModal();">Seguí tu pedido</a></li>
             <li><a href="#catalogo" class="footer-link">Guía Oficial de Talles</a></li>
             <li><a href="#catalogo" class="footer-link">Cuidados de Metales Nobles</a></li>
             <li><a href="#catalogo" class="footer-link">Política de Envíos Nacionales</a></li>

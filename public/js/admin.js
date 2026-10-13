@@ -212,6 +212,17 @@ function renderKPIs() {
   document.getElementById('kpi-pending-transfers').textContent = s.pending_transfers;
   document.getElementById('kpi-workshop').textContent = s.in_workshop;
   document.getElementById('kpi-transit').textContent = s.in_transit;
+
+  const statusEl = document.getElementById('admin-system-status');
+  if (statusEl) {
+    const storage = {
+      redis: ['ok', 'Datos guardados en la base de datos'],
+      archivos: ['ok', 'Datos guardados en archivos locales'],
+      temporal: ['warn', 'Datos temporales: conectá Upstash Redis en Vercel (Storage) para no perder pedidos ni cambios']
+    }[s.storage] || ['warn', 'Almacenamiento desconocido'];
+    const emails = s.emails ? ['ok', 'Emails a clientes activos'] : ['warn', 'Emails sin configurar: cargá SMTP_USER y SMTP_PASSWORD en Vercel'];
+    statusEl.innerHTML = [storage, emails].map(([kind, text]) => `<span class="system-pill system-${kind}">${text}</span>`).join('');
+  }
 }
 
 async function fetchOrders() {
@@ -272,6 +283,15 @@ function renderOrdersTable() {
         <span>Detalle</span>
       </button>
     `;
+
+    const waUrl = whatsappUrl(order);
+    if (waUrl) {
+      actionButtons += `
+        <a class="btn-op-action" href="${waUrl}" target="_blank" rel="noopener" title="Abrir WhatsApp con el mensaje armado">
+          <span>WhatsApp</span>
+        </a>
+      `;
+    }
 
     if (order.payment_status === 'pending_verification') {
       actionButtons += `
@@ -349,7 +369,7 @@ async function quickApproveTransfer(orderId) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Pedido ${orderId} acreditado. Derivado a taller.`);
+      showToast(`Pedido ${orderId} acreditado. Derivado a taller.${emailNote(result)}`);
       await fetchStats();
       await fetchOrders();
     }
@@ -358,9 +378,39 @@ async function quickApproveTransfer(orderId) {
   }
 }
 
+function emailNote(result) {
+  return result && result.emailed && result.emailed.length ? ' Se avisó al cliente por email.' : '';
+}
+
+// --- WHATSAPP A UN CLIC ---
+
+function whatsappNumber(phone) {
+  let digits = String(phone || '').replace(/\D/g, '').replace(/^0+/, '');
+  if (!digits) return '';
+  if (digits.startsWith('54')) return digits.startsWith('549') ? digits : '549' + digits.slice(2);
+  return '549' + digits; // celulares de Argentina: 54 + 9 + característica + número
+}
+
+function whatsappMessage(order) {
+  const firstName = String(order.customer.name || '').split(' ')[0] || '';
+  const hello = `Hola${firstName ? ' ' + firstName : ''}, te escribimos de GALILEA Atelier.`;
+  const follow = `\nSeguí tu pedido acá: ${window.location.origin}/?pedido=${order.id}`;
+  if (order.shipping_status === 'in_transit' && order.tracking_number) {
+    return `${hello} Tu pedido ${order.id} ya está en camino con Andreani. Número de envío: ${order.tracking_number}. Podés seguirlo en https://www.andreani.com/envio/${encodeURIComponent(order.tracking_number)}${follow}`;
+  }
+  if (order.shipping_status === 'delivered') return `${hello} Tu pedido ${order.id} figura como entregado. ¡Esperamos que lo disfrutes!`;
+  if (order.payment_status === 'approved') return `${hello} Recibimos el pago de tu pedido ${order.id} y ya lo estamos preparando en el taller.${follow}`;
+  if (order.payment_status === 'pending_verification') return `${hello} Recibimos tu pedido ${order.id}. Cuando hagas la transferencia, mandanos el comprobante por acá.${follow}`;
+  return `${hello} Te contactamos por tu pedido ${order.id}.${follow}`;
+}
+
+function whatsappUrl(order) {
+  const number = whatsappNumber(order.customer && order.customer.phone);
+  return number ? `https://wa.me/${number}?text=${encodeURIComponent(whatsappMessage(order))}` : '';
+}
+
 function openDispatchModal(orderId) {
-  const suggestedGuide = `ANDR-${Math.floor(100000000 + Math.random() * 900000000)}AR`;
-  const tracking = prompt(`Ingresá el número de guía Andreani para ${orderId}:`, suggestedGuide);
+  const tracking = prompt(`Ingresá el número de envío de Andreani para ${orderId}:`, '');
   if (tracking && tracking.trim()) {
     dispatchOrder(orderId, tracking.trim());
   }
@@ -378,7 +428,7 @@ async function dispatchOrder(orderId, trackingNumber) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Pedido ${orderId} despachado.`);
+      showToast(`Pedido ${orderId} despachado.${emailNote(result)}`);
       await fetchStats();
       await fetchOrders();
     }
@@ -400,7 +450,7 @@ async function markAsDelivered(orderId) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Pedido ${orderId} marcado como entregado.`);
+      showToast(`Pedido ${orderId} marcado como entregado.${emailNote(result)}`);
       await fetchStats();
       await fetchOrders();
     }
@@ -415,8 +465,10 @@ function openOrderDetailModal(orderId) {
 
   const overlay = document.getElementById('admin-modal-overlay');
   const container = document.getElementById('admin-modal-content');
-  const cleanPhone = order.customer.phone.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${order.customer.name}, te contactamos de GALILEA Atelier sobre tu orden ${order.id}.`)}`;
+  const waUrl = whatsappUrl(order);
+  const historyHtml = (order.history || []).map(h => `
+    <li><span style="color: var(--admin-text-muted);">${h.at}</span> · ${h.label}</li>
+  `).join('');
 
   container.innerHTML = `
     <div class="admin-modal-card">
@@ -439,16 +491,25 @@ function openOrderDetailModal(orderId) {
           <div><strong>Nombre:</strong> ${order.customer.name}</div>
           <div><strong>DNI / CUIL:</strong> ${order.customer.dni}</div>
           <div><strong>Teléfono:</strong> ${order.customer.phone}</div>
-          <a href="${whatsappUrl}" target="_blank" rel="noopener" class="whatsapp-link-btn">Contactar por WhatsApp</a>
+          <div><strong>Email:</strong> ${order.customer.email || '-'}</div>
+          ${waUrl ? `<a href="${waUrl}" target="_blank" rel="noopener" class="whatsapp-link-btn">Contactar por WhatsApp</a>` : ''}
         </div>
         <div>
           <strong style="color: var(--gold-dark); text-transform: uppercase; font-size: 0.72rem;">Destino de Envío</strong>
           <div><strong>Dirección:</strong> ${order.customer.address}</div>
           <div><strong>Provincia:</strong> ${order.customer.province}</div>
           <div><strong>Transporte:</strong> ${order.shipping_carrier}</div>
-          ${order.tracking_number ? `<div style="color: var(--gold-dark); font-weight: 700;">Guía: ${order.tracking_number}</div>` : ''}
+          ${order.tracking_number ? `<div style="color: var(--gold-dark); font-weight: 700;">Guía: <a href="https://www.andreani.com/envio/${encodeURIComponent(order.tracking_number)}" target="_blank" rel="noopener">${order.tracking_number}</a></div>` : ''}
         </div>
       </div>
+
+      ${historyHtml ? `
+        <div style="margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.82rem; text-transform: uppercase; margin-bottom: 0.6rem;">Historial</h4>
+          <ul style="font-size: 0.8rem; line-height: 1.7; padding-left: 1.1rem;">${historyHtml}</ul>
+          ${(order.emails_sent || []).length ? `<div style="font-size: 0.72rem; color: var(--admin-text-muted);">Emails enviados al cliente: ${order.emails_sent.length}</div>` : ''}
+        </div>
+      ` : ''}
 
       <div style="margin-bottom: 1.8rem;">
         <h4 style="font-size: 0.82rem; text-transform: uppercase; margin-bottom: 0.8rem;">Piezas en Taller</h4>
@@ -488,46 +549,54 @@ function closeAdminModal() {
 // MÓDULO 2: CATÁLOGO & FOTOGRAFÍAS (SOLO ADMIN)
 // =========================================================================
 
-// --- UTILIDAD DE SUBIDA DE IMÁGENES EN LOCAL ---
-async function uploadImageFile(file) {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch('/api/admin/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${AdminState.token}`
-      },
-      body: formData
-    });
-    const data = await res.json();
-    if (data.success && data.url) return data.url;
-    throw new Error(data.error || 'Error al subir archivo');
-  } catch (err) {
-    // Respaldo Base64 JSON
-    return new Promise((resolve, reject) => {
+// --- SUBIDA DE IMÁGENES ---
+
+// Achica la foto en el navegador (máx. 1600 px, JPEG) para que suba rápido y no supere el límite de Vercel
+function optimizeImage(file, maxSide = 1600, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'image/gif') {
       const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const res = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${AdminState.token}`
-            },
-            body: JSON.stringify({ filename: file.name, data: reader.result })
-          });
-          const data = await res.json();
-          if (data.success && data.url) resolve(data.url);
-          else reject(new Error(data.error || 'Error al subir imagen'));
-        } catch (e) {
-          reject(e);
-        }
-      };
+      reader.onload = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
-    });
-  }
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF'; // fondo blanco para PNG transparentes
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('No se pudo leer la imagen'));
+    };
+    img.src = url;
+  });
+}
+
+async function uploadImageFile(file) {
+  const data = await optimizeImage(file);
+  const res = await fetch('/api/admin/upload', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${AdminState.token}`
+    },
+    body: JSON.stringify({ filename: file.name, data })
+  });
+  const result = await res.json();
+  if (!result.success || !result.url) throw new Error(result.error || 'Error al subir la foto');
+  if (result.warning) showToast(result.warning);
+  return result.url;
 }
 
 // Vinculación de zona Drag & Drop + Input File + Previsualización en Vivo
@@ -599,7 +668,7 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       previewImg.style.display = 'block';
     }
     if (statusEl) {
-      statusEl.innerHTML = `<span style="color: var(--admin-rose-primary); font-weight: 600;">Guardando archivo en servidor local...</span>`;
+      statusEl.innerHTML = `<span style="color: var(--admin-rose-primary); font-weight: 600;">Subiendo foto...</span>`;
     }
 
     try {
@@ -607,9 +676,9 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       if (urlInput) urlInput.value = localUrl;
       if (previewImg) previewImg.src = localUrl;
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #205C33; font-weight: 700;">Archivo local guardado: ${file.name}</span>`;
+        statusEl.innerHTML = `<span style="color: #205C33; font-weight: 700;">Foto subida: ${file.name}</span>`;
       }
-      showToast(`Foto '${file.name}' guardada en local`);
+      showToast(`Foto '${file.name}' subida`);
     } catch (err) {
       if (statusEl) {
         statusEl.innerHTML = `<span style="color: #962332; font-weight: 600;">Error al guardar: ${err.message}</span>`;
@@ -734,9 +803,14 @@ function renderCatalogTable() {
         </div>
       </td>
       <td>
-        <button class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}" style="cursor: pointer; border: none;" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})">
-          <span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span>
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <input type="number" min="0" id="stock-input-${prod.id}" value="${Number.isInteger(prod.stock) ? prod.stock : ''}" placeholder="∞"
+            title="Unidades disponibles (vacío = sin control de stock)" class="form-input" style="width: 68px; padding: 0.35rem 0.5rem; font-size: 0.85rem;"
+            onchange="saveProductStock('${prod.id}')">
+          ${Number.isInteger(prod.stock)
+            ? `<span class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}"><span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span></span>`
+            : `<button class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}" style="cursor: pointer; border: none;" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})" title="Sin control de unidades: clic para cambiar"><span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span></button>`}
+        </div>
       </td>
       <td style="text-align: right;">
         <div class="table-action-btns" style="justify-content: flex-end;">
@@ -776,6 +850,30 @@ async function saveProductPrice(id) {
       showToast(`Precio actualizado a ${formatARS(newPrice)}`);
     } else {
       showToast(result.error || 'Error al actualizar precio');
+    }
+  } catch (e) {
+    showToast('Error de conexión');
+  }
+}
+
+async function saveProductStock(id) {
+  const input = document.getElementById(`stock-input-${id}`);
+  if (!input) return;
+  try {
+    const res = await fetch(`/api/admin/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
+      body: JSON.stringify({ stock: input.value })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(input.value === '' ? 'Stock sin control de unidades' : `Stock actualizado: ${input.value} u.`);
+      fetchCatalog();
+    } else {
+      showToast(result.error || 'Error al actualizar el stock');
     }
   } catch (e) {
     showToast('Error de conexión');
@@ -841,9 +939,15 @@ function openCreateProductModal() {
           ¿Falta alguna opción? Agregala en <a href="#" onclick="event.preventDefault(); openOptionsModal();" style="color: var(--admin-rose-deep); font-weight: 600;">Categorías y materiales</a>.
         </p>
 
-        <div class="form-group" style="margin-bottom: 1.2rem;">
-          <label class="form-label">Talles o medidas (separados por coma)</label>
-          <input type="text" id="new-prod-sizes" class="form-input" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Talles o medidas (separados por coma)</label>
+            <input type="text" id="new-prod-sizes" class="form-input" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock (unidades)</label>
+            <input type="number" min="0" id="new-prod-units" class="form-input" value="1" placeholder="Vacío = sin control">
+          </div>
         </div>
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -959,6 +1063,7 @@ async function handleCreateProductSubmit(e) {
   const category = document.getElementById('new-prod-category').value;
   const material = document.getElementById('new-prod-metal').value;
   const sizes = document.getElementById('new-prod-sizes').value;
+  const stock = document.getElementById('new-prod-units').value;
   const price = parseFloat(document.getElementById('new-prod-price').value);
   const badge = document.getElementById('new-prod-badge').value.trim();
   const primary_image = document.getElementById('new-prod-img').value.trim();
@@ -977,7 +1082,7 @@ async function handleCreateProductSubmit(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AdminState.token}`
       },
-      body: JSON.stringify({ name, category, material, sizes, price, badge, primary_image, secondary_image, description })
+      body: JSON.stringify({ name, category, material, sizes, stock, price, badge, primary_image, secondary_image, description })
     });
     const result = await res.json();
     if (result.success) {
@@ -1117,9 +1222,15 @@ function openEditProductModal(productId) {
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 1.2rem;">
-          <label class="form-label">Talles o medidas (separados por coma)</label>
-          <input type="text" id="edit-prod-sizes" class="form-input" value="${(prod.sizes || []).join(', ')}" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
+        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Talles o medidas (separados por coma)</label>
+            <input type="text" id="edit-prod-sizes" class="form-input" value="${(prod.sizes || []).join(', ')}" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock (unidades)</label>
+            <input type="number" min="0" id="edit-prod-units" class="form-input" value="${Number.isInteger(prod.stock) ? prod.stock : ''}" placeholder="Vacío = sin control">
+          </div>
         </div>
 
         <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -1137,7 +1248,7 @@ function openEditProductModal(productId) {
           <label class="form-label">Disponibilidad en Taller</label>
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem;">
             <input type="checkbox" id="edit-prod-stock" ${prod.in_stock ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--admin-rose-primary);">
-            <span>Pieza disponible para compra inmediata (En Stock)</span>
+            <span>Disponible para compra (se usa cuando no cargás unidades de stock)</span>
           </label>
         </div>
 
@@ -1179,6 +1290,7 @@ async function handleEditProductSubmit(e, productId) {
   const category = document.getElementById('edit-prod-category').value;
   const material = document.getElementById('edit-prod-metal').value;
   const sizes = document.getElementById('edit-prod-sizes').value;
+  const stock = document.getElementById('edit-prod-units').value;
   const price = parseFloat(document.getElementById('edit-prod-price').value);
   const badge = document.getElementById('edit-prod-badge').value.trim();
   const in_stock = document.getElementById('edit-prod-stock').checked;
@@ -1199,6 +1311,7 @@ async function handleEditProductSubmit(e, productId) {
         category: category !== prod.category ? category : undefined,
         material: material !== prod.metal_group ? material : undefined,
         sizes,
+        stock,
         price,
         badge,
         in_stock,

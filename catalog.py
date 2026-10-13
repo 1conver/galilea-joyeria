@@ -119,6 +119,44 @@ def parse_sizes(value):
     sizes = [re.sub(r"\s+", " ", str(s)).strip()[:30] for s in (value or [])]
     return [s for s in sizes if s][:20] or ["Único"]
 
+def parse_stock(value):
+    """Unidades disponibles. Vacío = sin control de stock (se maneja con el interruptor En stock/Agotado)."""
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        stock = int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError("El stock tiene que ser un número de unidades")
+    if stock < 0:
+        raise ValueError("El stock no puede ser negativo")
+    return stock
+
+def available(product):
+    """Unidades que se pueden vender (None = sin límite)."""
+    if product.get("in_stock") is False:
+        return 0
+    stock = product.get("stock")
+    return stock if isinstance(stock, int) else None
+
+def apply_sale(products, order):
+    """Descuenta del stock las piezas de un pedido aprobado (una sola vez por pedido).
+    Devuelve avisos si alguna pieza no alcanzaba (para revisar a mano)."""
+    if order.get("stock_applied"):
+        return []
+    by_id = {str(p.get("id")): p for p in products}
+    shortages = []
+    for it in order.get("items", []):
+        p = by_id.get(str(it.get("id")))
+        if not p or not isinstance(p.get("stock"), int):
+            continue
+        qty = int(it.get("quantity", 1))
+        if qty > p["stock"]:
+            shortages.append(f"{p.get('name')}: se vendieron {qty} y había {p['stock']}")
+        p["stock"] = max(0, p["stock"] - qty)
+        p["in_stock"] = p["stock"] > 0
+    order["stock_applied"] = True
+    return shortages
+
 def _price(value):
     try:
         price = float(value)
@@ -143,6 +181,7 @@ def new_product(data, products, settings):
     price = _price(data.get("price"))
     category, category_label = resolve_category(data.get("category") or "anillos", settings)
     metal, metal_group = resolve_material(data.get("material") or data.get("metal"), settings)
+    stock = parse_stock(data.get("stock"))
     existing = {p.get("id") for p in products}
     n = len(products) + 1
     while f"galilea-{n:02d}" in existing:
@@ -162,14 +201,19 @@ def new_product(data, products, settings):
         "description": str(data.get("description", "")).strip(),
         "specs": {"material": metal, "acabado": str(data.get("acabado") or "Terminación artesanal").strip()[:80]},
         "sizes": parse_sizes(data.get("sizes")),
-        "in_stock": True
+        "stock": stock,
+        "in_stock": stock is None or stock > 0
     }
 
 def update_product(prod, data, settings):
     """Aplica los cambios del panel a la joya (modifica prod). ValueError si algo es inválido."""
     if "price" in data:
         prod["price"] = _price(data["price"])
-    if "in_stock" in data:
+    if "stock" in data:
+        prod["stock"] = parse_stock(data["stock"])
+    if isinstance(prod.get("stock"), int):
+        prod["in_stock"] = prod["stock"] > 0  # con cantidad, la disponibilidad sale del número
+    elif "in_stock" in data:
         prod["in_stock"] = bool(data["in_stock"])
     if "name" in data and str(data["name"]).strip():
         prod["name"] = str(data["name"]).strip()[:120]
