@@ -31,6 +31,9 @@ class FileStore:
     def _path(self, name):
         return os.path.join(self.data_dir, f"{name}.json")
 
+    def ping(self):
+        return True
+
     def get(self, name, default):
         path = self._path(name)
         if not os.path.exists(path):
@@ -108,6 +111,9 @@ class RedisStore:
     def put(self, name, data):
         self._cmd("SET", f"{PREFIX}:doc:{name}", json.dumps(data, ensure_ascii=False))
 
+    def ping(self):
+        return self._cmd("PING") == "PONG"
+
     def claim(self, key, ttl=30 * 24 * 3600):
         """True solo la primera vez para cada key, aunque lo pidan dos instancias a la vez."""
         return self._cmd("SET", f"{PREFIX}:claim:{key}", "1", "NX", "EX", ttl) == "OK"
@@ -132,11 +138,17 @@ class RedisStore:
 
 
 def redis_credentials():
-    """Vercel puede cargar las variables con el prefijo KV_ o UPSTASH_REDIS_ según la integración."""
-    for url_key, token_key in (("UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"),
-                               ("KV_REST_API_URL", "KV_REST_API_TOKEN")):
+    """Vercel carga las variables como UPSTASH_REDIS_REST_*, KV_REST_API_* o con el prefijo
+    que se haya elegido al conectar (ej. STORAGE_REST_API_URL). Se aceptan todas."""
+    pairs = [("UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"), ("KV_REST_API_URL", "KV_REST_API_TOKEN")]
+    for key in sorted(os.environ):
+        if key.endswith("_REST_API_URL"):
+            pairs.append((key, key[:-len("_URL")] + "_TOKEN"))
+        elif key.endswith("REDIS_REST_URL"):
+            pairs.append((key, key[:-len("_URL")] + "_TOKEN"))
+    for url_key, token_key in pairs:
         url, token = os.environ.get(url_key, "").strip(), os.environ.get(token_key, "").strip()
-        if url and token:
+        if url.startswith(("https://", "http://127.0.0.1", "http://localhost")) and token:
             return url, token
     return None, None
 

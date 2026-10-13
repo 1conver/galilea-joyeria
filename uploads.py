@@ -63,10 +63,18 @@ def upload_to_blob(data, ext, mime, token):
         raise RuntimeError("Vercel Blob no devolvió una URL")
     return url
 
+def blob_token():
+    """BLOB_READ_WRITE_TOKEN, o la misma clave con el prefijo elegido al conectar el Blob en Vercel."""
+    token = os.environ.get("BLOB_READ_WRITE_TOKEN", "").strip()
+    if token:
+        return token
+    return next((v.strip() for k, v in sorted(os.environ.items())
+                 if k.endswith("READ_WRITE_TOKEN") and v.strip().startswith("vercel_blob_rw_")), "")
+
 def save_image(data, local_dir=None):
     """Valida y guarda la imagen. Devuelve (url, aviso). El aviso explica si quedó en un lugar provisorio."""
     ext, mime = check_image(data)
-    token = os.environ.get("BLOB_READ_WRITE_TOKEN", "").strip()
+    token = blob_token()
     if token:
         try:
             return upload_to_blob(data, ext, mime, token), ""

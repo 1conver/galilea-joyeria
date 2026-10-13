@@ -220,8 +220,12 @@ function renderKPIs() {
       archivos: ['ok', 'Datos guardados en archivos locales'],
       temporal: ['warn', 'Datos temporales: conectá Upstash Redis en Vercel (Storage) para no perder pedidos ni cambios']
     }[s.storage] || ['warn', 'Almacenamiento desconocido'];
+    const images = {
+      blob: ['ok', 'Fotos en Vercel Blob'],
+      archivos: ['ok', 'Fotos en archivos locales']
+    }[s.images] || ['warn', 'Fotos dentro del producto: conectá Vercel Blob (Storage)'];
     const emails = s.emails ? ['ok', 'Emails a clientes activos'] : ['warn', 'Emails sin configurar: cargá SMTP_USER y SMTP_PASSWORD en Vercel'];
-    statusEl.innerHTML = [storage, emails].map(([kind, text]) => `<span class="system-pill system-${kind}">${text}</span>`).join('');
+    statusEl.innerHTML = [storage, images, emails].map(([kind, text]) => `<span class="system-pill system-${kind}">${text}</span>`).join('');
   }
 }
 

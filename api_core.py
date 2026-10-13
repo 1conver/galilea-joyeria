@@ -126,6 +126,22 @@ def get_categories(req):
 def get_settings(req):
     return ok(settings=public_settings(load_settings()))
 
+def image_storage():
+    if uploads.blob_token():
+        return "blob"
+    return "dentro del producto" if os.environ.get("VERCEL") else "archivos"
+
+def health(req):
+    """Estado público de las conexiones (sin claves): base de datos, fotos, emails y Mercado Pago."""
+    store = get_store()
+    try:
+        storage_ok = bool(store.ping())
+    except Exception as e:
+        print("Health: la base no responde:", e)
+        storage_ok = False
+    return ok(storage=store.kind, storage_ok=storage_ok, images=image_storage(),
+              emails=notify.configured(), mercadopago=bool(payments.token()))
+
 
 # --- COBROS ---
 
@@ -274,6 +290,7 @@ def admin_stats(req):
         "in_transit": count("shipping_status", "in_transit"),
         "delivered": count("shipping_status", "delivered"),
         "storage": get_store().kind,
+        "images": image_storage(),
         "emails": notify.configured()})
 
 
@@ -361,6 +378,7 @@ ROUTES = [
     ("GET", r"/api/products/(?P<id>[^/]+)", get_product),
     ("GET", r"/api/categories", get_categories),
     ("GET", r"/api/settings", get_settings),
+    ("GET", r"/api/health", health),
     ("POST", r"/api/checkout/preference", checkout_preference),
     ("POST", r"/api/checkout/process-card", process_card),
     ("POST", r"/api/checkout/webhook", webhook),
