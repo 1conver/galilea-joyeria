@@ -23,7 +23,7 @@ DOMINIOS DE ASESORÍA:
 4. Medidas y Talles en Argentina: Sistema métrico de diámetro interno en milímetros (16.5 mm = Talle 12/13; 17.2 mm = Talle 14/15; 18.0 mm = Talle 17/18; 19.0 mm = Talle 20/21). Primer ajuste de talle 100% bonificado sin cargo.
 5. Beneficios comerciales: 3 y 6 cuotas fijas sin interés con todas las tarjetas bancarias mediante Mercado Pago; 15% de descuento directo por Transferencia Bancaria (Alias: GALILEA.JOYAS.ARG).
 6. Envíos y Packaging: Envío gratis asegurado a toda la Argentina por Andreani Custodia Express (24-48h CABA/GBA, 3-5 días interior). Packaging de gala en caja rígida de lino, lazo de satén y certificado de autenticidad.
-7. Atención personalizada y taller: Atelier en Av. Alvear 1850, Buenos Aires. Visitas con cita previa y contacto humano por WhatsApp al +54 9 11 4050-9988.
+7. Atención personalizada y taller: Atelier en Av. Alvear 1850, Buenos Aires. Visitas con cita previa y contacto humano por WhatsApp al +54 9 11 5419-7890.
 8. Garantía y cuidado: Garantía perpetua sobre la ley de las piezas de Oro 18K y Plata 925; servicio de pulido y revisión anual sin cargo de por vida. Las piezas bañadas, de bronce o de fantasía requieren cuidado del agua, perfumes y cremas.
 
 GUARDRAIL ESTRICTO:
@@ -351,7 +351,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
         return {
             "reply": (
                 "Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:<br><br>"
-                "• **WhatsApp Directo:** [+54 9 11 4050-9988](https://wa.me/5491140509988) (Atención personalizada de lunes a sábados).<br>"
+                "• **WhatsApp Directo:** [+54 9 11 5419-7890](https://wa.me/5491154197890) (Atención personalizada de lunes a sábados).<br>"
                 "• **Correo Institucional:** atelier@galilea-joyeria.com<br>"
                 "• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.<br><br>"
                 "Haciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana."

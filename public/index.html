@@ -55,10 +55,10 @@
         <!-- Zona Izquierda: Redes Sociales del Atelier -->
         <div class="header-left-zone">
           <div class="header-social-links" aria-label="Redes del atelier">
-            <a href="#" class="header-icon-btn" aria-label="Instagram Oficial" title="Instagram Oficial" onclick="event.preventDefault(); showToast('Instagram Oficial: Enlace disponible próximamente');">
+            <a href="https://www.instagram.com/galileaacc" target="_blank" rel="noopener" data-contact="instagram" class="header-icon-btn" aria-label="Instagram de GALILEA" title="Instagram">
               <span data-icon="instagram"></span>
             </a>
-            <a href="#" class="header-icon-btn" aria-label="WhatsApp Asesoría" title="WhatsApp Asesoría" onclick="event.preventDefault(); showToast('WhatsApp de Asesoría: Enlace disponible próximamente');">
+            <a href="https://wa.me/5491154197890" target="_blank" rel="noopener" data-contact="whatsapp" class="header-icon-btn" aria-label="WhatsApp de GALILEA" title="WhatsApp">
               <span data-icon="whatsapp"></span>
             </a>
           </div>
@@ -381,6 +381,23 @@
   </section>
 
   <!-- Pie de Página Proporcional & Armonioso -->
+  <!-- Instagram: últimas publicaciones (se activan con INSTAGRAM_ACCESS_TOKEN) -->
+  <section class="ig-section" id="instagram">
+    <div class="container">
+      <div class="ig-head">
+        <div>
+          <span class="ig-eyebrow">Instagram</span>
+          <h2 class="section-title ig-title">Seguinos en <a href="https://www.instagram.com/galileaacc" target="_blank" rel="noopener" data-contact="instagram" class="ig-handle">@galileaacc</a></h2>
+        </div>
+        <a href="https://www.instagram.com/galileaacc" target="_blank" rel="noopener" data-contact="instagram" class="btn-luxury-outline ig-follow">
+          <span data-icon="instagram"></span>
+          <span>Ver perfil</span>
+        </a>
+      </div>
+      <div class="ig-grid" id="ig-grid" hidden></div>
+    </div>
+  </section>
+
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -396,11 +413,11 @@
 
           <!-- Redes Sociales Oficiales (Instagram & WhatsApp) -->
           <div class="footer-social-strip">
-            <a href="#" class="social-badge-btn" aria-label="Instagram de Galilea" onclick="event.preventDefault(); showToast('Canal oficial de Instagram: Enlace disponible próximamente');">
+            <a href="https://www.instagram.com/galileaacc" target="_blank" rel="noopener" data-contact="instagram" class="social-badge-btn" aria-label="Instagram de GALILEA">
               <span data-icon="instagram"></span>
               <span>Instagram</span>
             </a>
-            <a href="#" class="social-badge-btn" aria-label="WhatsApp de Galilea" onclick="event.preventDefault(); showToast('WhatsApp de Asesoría: Enlace disponible próximamente');">
+            <a href="https://wa.me/5491154197890" target="_blank" rel="noopener" data-contact="whatsapp" class="social-badge-btn" aria-label="WhatsApp de GALILEA">
               <span data-icon="whatsapp"></span>
               <span>WhatsApp</span>
             </a>
@@ -532,7 +549,7 @@
 
         <div class="ai-chat-actions">
           <!-- Botón de derivación directa a WhatsApp humano -->
-          <a href="https://wa.me/5491140509988?text=Hola%20Galilea%20Atelier,%20quisiera%20asesoramiento%20personalizado%20sobre%20sus%20joyas" target="_blank" class="ai-action-btn ai-btn-wa" title="Consultar con una orfebre por WhatsApp" aria-label="WhatsApp Asesoría">
+          <a href="https://wa.me/5491154197890?text=Hola%20Galilea%20Atelier,%20quisiera%20asesoramiento%20personalizado%20sobre%20sus%20joyas" target="_blank" rel="noopener" data-contact="whatsapp" data-wa-text="Hola Galilea Atelier, quisiera asesoramiento personalizado sobre sus joyas" class="ai-action-btn ai-btn-wa" title="Consultar con una orfebre por WhatsApp" aria-label="WhatsApp Asesoría">
             <span data-icon="whatsapp"></span>
           </a>
 

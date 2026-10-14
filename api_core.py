@@ -3,7 +3,7 @@ dispatch(method, path, query, body, headers) -> (status, payload)."""
 import os, re, json, uuid
 from datetime import datetime
 
-import auth, catalog, notify, payments, uploads
+import auth, catalog, instagram, notify, payments, uploads
 from store import get_store, REPO_DATA_DIR
 
 try:
@@ -14,8 +14,11 @@ except Exception:
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 UPLOADS_DIR = os.path.join(PUBLIC_DIR, "uploads")
 SECRET_SETTINGS = ("mercadopago_access_token",)
+# El token de Mercado Pago no se carga desde el panel: va en las variables de entorno (Vercel / .env)
 SETTINGS_KEYS = ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer_discount_pct",
-                 "atelier_address", "contact_phone", "mercadopago_access_token", "mercadopago_public_key"]
+                 "atelier_address", "contact_phone"]
+# Contacto editable desde el panel (Ofertas & Portada); estos son los valores si no se cargó otro
+DEFAULT_CONTACT = {"whatsapp_number": "+54 9 11 5419-7890", "instagram_url": "https://www.instagram.com/galileaacc"}
 SHIPPING_LABELS = {
     "in_workshop": "En Taller (Ajuste de Medidas)",
     "in_transit": "En Tránsito con Andreani",
@@ -69,8 +72,30 @@ def load_users():
     ids = {u.get("id") for u in base}
     return base + [u for u in get_store().get("users_extra", []) if u.get("id") not in ids]
 
+def whatsapp_digits(number):
+    return re.sub(r"\D", "", str(number or ""))
+
+def clean_contact(data):
+    """Valida WhatsApp e Instagram que vienen del panel. ValueError si no son válidos."""
+    out = {}
+    if "whatsapp_number" in data:
+        number = re.sub(r"[^\d+\s()-]", "", str(data["whatsapp_number"])).strip()[:30]
+        if not 8 <= len(whatsapp_digits(number)) <= 15:
+            raise ValueError("El WhatsApp tiene que ser un número con código de país, ej. +54 9 11 1234-5678")
+        out["whatsapp_number"] = number
+    if "instagram_url" in data:
+        url = str(data["instagram_url"]).strip()
+        if re.fullmatch(r"@?[A-Za-z0-9._]{1,30}", url):
+            url = "https://www.instagram.com/" + url.lstrip("@")
+        if not re.fullmatch(r"https://(www\.)?instagram\.com/[A-Za-z0-9._]{1,30}/?", url):
+            raise ValueError("Instagram: pegá el link del perfil (https://www.instagram.com/usuario) o el @usuario")
+        out["instagram_url"] = url.rstrip("/")
+    return out
+
 def public_settings(settings):
     safe = {k: v for k, v in settings.items() if k not in SECRET_SETTINGS}
+    for key, value in DEFAULT_CONTACT.items():
+        safe[key] = safe.get(key) or value
     safe["mercadopago_configured"] = bool(payments.token())
     return safe
 
@@ -140,7 +165,10 @@ def health(req):
         print("Health: la base no responde:", e)
         storage_ok = False
     return ok(storage=store.kind, storage_ok=storage_ok, images=image_storage(req),
-              emails=notify.configured(), mercadopago=bool(payments.token()))
+              emails=notify.configured(), mercadopago=bool(payments.token()), instagram=instagram.configured())
+
+def instagram_posts(req):
+    return ok(**instagram.get_posts(get_store()))
 
 
 # --- COBROS ---
@@ -203,7 +231,13 @@ def chat(req):
     message = str(req.body.get("message", "")).strip()
     products = load_products()
     if process_chat_message:
-        return 200, process_chat_message(message, req.body.get("history", []), products)
+        result = process_chat_message(message, req.body.get("history", []), products)
+        # el chat usa el WhatsApp cargado en el panel, no el de los textos por defecto
+        contact = public_settings(load_settings())
+        if isinstance(result.get("reply"), str) and contact["whatsapp_number"] != DEFAULT_CONTACT["whatsapp_number"]:
+            result["reply"] = (result["reply"].replace(DEFAULT_CONTACT["whatsapp_number"], contact["whatsapp_number"])
+                               .replace(whatsapp_digits(DEFAULT_CONTACT["whatsapp_number"]), whatsapp_digits(contact["whatsapp_number"])))
+        return 200, result
     return 200, {"success": True, "reply": "Bienvenido/a a <strong>GALILEA Atelier</strong>. ¿En qué pieza puedo orientarte hoy?",
                  "products": products[:2], "provider": "galilea-fallback"}
 
@@ -333,19 +367,12 @@ def admin_settings(req):
     req.require("admin")
     settings = load_settings()
     catalog.apply_option_settings(settings, req.body)  # categorías y materiales
-    message = "Configuración de la tienda actualizada"
+    settings.update(clean_contact(req.body))
     for key in SETTINGS_KEYS:
-        if key not in req.body:
-            continue
-        if key in SECRET_SETTINGS:
-            if not str(req.body[key]).strip():
-                continue  # vacío = conservar el token guardado (el panel nunca lo muestra)
-            if os.environ.get("VERCEL"):
-                message += ". En Vercel el Access Token se carga como variable de entorno MERCADOPAGO_ACCESS_TOKEN"
-                continue
-        settings[key] = req.body[key]
+        if key in req.body:
+            settings[key] = req.body[key]
     get_store().put("settings", settings)
-    return ok(message=message, settings=public_settings(settings))
+    return ok(message="Configuración de la tienda actualizada", settings=public_settings(settings))
 
 def admin_users(req):
     req.require("admin")
@@ -379,6 +406,7 @@ ROUTES = [
     ("GET", r"/api/categories", get_categories),
     ("GET", r"/api/settings", get_settings),
     ("GET", r"/api/health", health),
+    ("GET", r"/api/instagram", instagram_posts),
     ("POST", r"/api/checkout/preference", checkout_preference),
     ("POST", r"/api/checkout/process-card", process_card),
     ("POST", r"/api/checkout/webhook", webhook),

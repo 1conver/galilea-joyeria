@@ -37,8 +37,6 @@ DEFAULT_MATERIALS = [
     {"id": "cuero-hilo", "label": "Cuero / hilo encerado"},
 ]
 OPTION_KEYS = ("categories", "materials")
-DEFAULT_IMAGE = "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85"
-DEFAULT_SECONDARY = "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85"
 
 def slugify(text):
     t = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode().lower()
@@ -182,6 +180,9 @@ def new_product(data, products, settings):
     category, category_label = resolve_category(data.get("category") or "anillos", settings)
     metal, metal_group = resolve_material(data.get("material") or data.get("metal"), settings)
     stock = parse_stock(data.get("stock"))
+    primary = _image(data, "primary_image")
+    if not primary:
+        raise ValueError("Falta la foto principal")
     existing = {p.get("id") for p in products}
     n = len(products) + 1
     while f"galilea-{n:02d}" in existing:
@@ -196,8 +197,9 @@ def new_product(data, products, settings):
         "price": price,
         "badge": str(data.get("badge", "Nuevo")).strip()[:40],
         "featured": bool(data.get("featured", False)),
-        "primary_image": _image(data, "primary_image") or DEFAULT_IMAGE,
-        "secondary_image": _image(data, "secondary_image") or DEFAULT_SECONDARY,
+        "primary_image": primary,
+        # sin foto de detalle la tienda muestra la principal (antes ponía una foto de stock de otra joya)
+        "secondary_image": _image(data, "secondary_image"),
         "description": str(data.get("description", "")).strip(),
         "specs": {"material": metal, "acabado": str(data.get("acabado") or "Terminación artesanal").strip()[:80]},
         "sizes": parse_sizes(data.get("sizes")),

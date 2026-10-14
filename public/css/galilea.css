@@ -156,3 +156,71 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pastel-r
   .tracking-steps li{font-size:.62rem}
   .tracking-history-date{display:block;min-width:0}
 }
+
+/* Instagram */
+.ig-section{padding:4.5rem 0 3.5rem;background:var(--bg-surface,#FDF4F5)}
+.ig-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1.2rem;flex-wrap:wrap;margin-bottom:1.6rem}
+.ig-eyebrow{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#C4506B}
+.ig-title{font-size:clamp(1.9rem,4.5vw,2.8rem)!important;text-align:left;margin:.3rem 0 0!important;line-height:1.1}
+.ig-handle{color:#C4506B;text-decoration:none}
+.ig-handle:hover{text-decoration:underline}
+.ig-follow{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none}
+.ig-follow svg{width:16px;height:16px}
+.ig-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}
+.ig-grid[hidden]{display:none}
+.ig-post{position:relative;display:block;aspect-ratio:1;border-radius:14px;overflow:hidden;background:#F9E7EA}
+.ig-post img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
+.ig-post:hover img{transform:scale(1.05)}
+.ig-post-badge{position:absolute;top:.5rem;right:.5rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:rgba(58,24,34,.75);color:#fff;border-radius:999px;padding:.2rem .5rem}
+@media(max-width:760px){
+  .ig-section{padding:3rem 0 2.5rem}
+  .ig-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+  .ig-post{border-radius:10px}
+  .ig-post:nth-child(n+7){display:none}
+  .ig-follow{width:100%;justify-content:center}
+}
+
+/* Encabezado en celular: entran Instagram, WhatsApp, seguimiento y bolsa sin desbordar */
+@media (max-width:900px){.header-admin-btn{display:none}}
+@media (max-width:420px){
+  .header-top-grid{gap:.4rem}
+  .header-right-zone{gap:.35rem}
+  .header-left-zone{gap:.15rem}
+  .header-btn{width:36px;height:36px}
+  .header-icon-btn{width:32px;height:32px}
+  .brand-title{font-size:1.45rem;letter-spacing:.18em;text-indent:.18em}
+}
+
+/* Catálogo en celular: categorías en una fila deslizable (antes eran 5 filas de botones) */
+@media (max-width:760px){
+  .category-filter-bar{flex-wrap:nowrap;justify-content:flex-start;padding:0 0 .4rem;gap:.45rem;-webkit-overflow-scrolling:touch}
+  .category-filter-bar::-webkit-scrollbar{display:none}
+  .category-filter-bar .cat-btn{flex-shrink:0;padding:.45rem .85rem;font-size:.66rem;white-space:nowrap}
+}
+
+/* Ventanas y bolsa por encima del chat flotante (998); los avisos por encima de todo.
+   El fondo de la bolsa queda debajo de la bolsa (el fondo usa la misma clase que las ventanas). */
+#quickview-modal-overlay,#checkout-modal-overlay{z-index:1000}
+#drawer-overlay{z-index:999}
+.cart-drawer{z-index:1001}
+.toast-container{z-index:1100}
+
+/* Ventanas de la tienda en celular: hoja que sube desde abajo, a todo el ancho */
+@media (max-width:760px){
+  .modal-overlay{align-items:flex-end}
+  .product-modal-card,.checkout-modal-card{width:100%!important;max-width:100%!important;max-height:92vh;border-radius:20px 20px 0 0!important}
+  .product-modal-card{padding:0!important}
+  .modal-main-img{min-height:0;height:auto;max-height:42vh;aspect-ratio:4/3}
+  .modal-details-col{padding:1.2rem 1.1rem 1.6rem;gap:1rem}
+  .modal-title{font-size:1.7rem}
+  /* el botón de compra sube: queda después del precio y los talles */
+  .modal-details-col>div:has(.size-options){order:3}
+  .modal-details-col>div:has(#btn-modal-add-cart){order:4}
+  .modal-details-col>.modal-desc{order:5}
+  .modal-details-col>div:has(.modal-specs-table){order:6}
+  .checkout-modal-card{padding:1.3rem 1.1rem 1.6rem!important}
+  .checkout-title{font-size:1.6rem}
+  .checkout-header{padding-right:2.4rem}
+  .checkout-modal-card .form-row{grid-template-columns:1fr!important;gap:0!important}
+  .checkout-modal-card .form-group{margin-bottom:.9rem}
+}

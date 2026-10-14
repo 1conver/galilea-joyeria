@@ -326,33 +326,33 @@ function renderOrdersTable() {
 
     return `
       <tr>
-        <td>
+        <td class="cell-head">
           <span class="order-code-badge">${order.id}</span>
           <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">${order.date}</div>
         </td>
-        <td>
+        <td data-label="Cliente">
           <div style="font-weight: 600;">${order.customer.name}</div>
           <div style="font-size: 0.72rem; color: var(--text-secondary);">DNI: ${order.customer.dni} · ${order.customer.province}</div>
         </td>
-        <td>
+        <td data-label="Joyas">
           <div style="font-size: 0.78rem; line-height: 1.4;">${itemsSummary}</div>
         </td>
-        <td>
+        <td data-label="Total">
           <div style="font-weight: 700;">${formatARS(order.total_amount)}</div>
           <div style="font-size: 0.7rem; color: var(--text-muted);">${order.payment_method_label}</div>
         </td>
-        <td>
+        <td data-label="Cobro">
           <span class="badge-status ${payBadgeClass}">
             <span>${order.payment_status_label}</span>
           </span>
         </td>
-        <td>
+        <td data-label="Envío">
           <span class="badge-status ${shipBadgeClass}">
             <span>${order.shipping_status_label}</span>
           </span>
           ${order.tracking_number ? `<div style="font-size: 0.7rem; font-family: monospace; color: var(--gold-dark); margin-top: 0.2rem;">Guía: ${order.tracking_number}</div>` : ''}
         </td>
-        <td>
+        <td class="cell-actions">
           <div class="table-action-btns">${actionButtons}</div>
         </td>
       </tr>
@@ -693,25 +693,6 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
 }
 
 // Alternar entre pestaña "Subir Archivo Local" y "Link URL"
-function toggleUploadTab(targetPrefix, mode) {
-  const localTabBtn = document.getElementById(`${targetPrefix}-tab-local`);
-  const urlTabBtn = document.getElementById(`${targetPrefix}-tab-url`);
-  const localPane = document.getElementById(`${targetPrefix}-pane-local`);
-  const urlPane = document.getElementById(`${targetPrefix}-pane-url`);
-
-  if (mode === 'local') {
-    if (localTabBtn) localTabBtn.classList.add('active');
-    if (urlTabBtn) urlTabBtn.classList.remove('active');
-    if (localPane) localPane.style.display = 'block';
-    if (urlPane) urlPane.style.display = 'none';
-  } else {
-    if (localTabBtn) localTabBtn.classList.remove('active');
-    if (urlTabBtn) urlTabBtn.classList.add('active');
-    if (localPane) localPane.style.display = 'none';
-    if (urlPane) urlPane.style.display = 'block';
-  }
-}
-
 async function fetchCatalog() {
   try {
     const res = await fetch('/api/products');
@@ -779,7 +760,7 @@ function renderCatalogTable() {
 
   tbody.innerHTML = prods.map(prod => `
     <tr>
-      <td>
+      <td class="cell-head">
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div style="position: relative; cursor: pointer;" onclick="openEditProductModal('${prod.id}')" title="Hacé clic para cambiar fotos o editar">
             <img src="${prod.primary_image}" alt="${prod.name}" class="product-thumb-preview">
@@ -796,17 +777,17 @@ function renderCatalogTable() {
           </div>
         </div>
       </td>
-      <td>
+      <td data-label="Categoría">
         <div style="font-weight: 600;">${prod.category_label || prod.category}</div>
         <div style="font-size: 0.72rem; color: var(--admin-text-muted); margin-top: 0.15rem;">${prod.metal}</div>
       </td>
-      <td>
+      <td data-label="Precio">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <input type="number" id="price-input-${prod.id}" value="${prod.price}" class="form-input" style="width: 125px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
           <button class="btn-op-action" onclick="saveProductPrice('${prod.id}')" title="Guardar Precio">Guardar</button>
         </div>
       </td>
-      <td>
+      <td data-label="Stock">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <input type="number" min="0" id="stock-input-${prod.id}" value="${Number.isInteger(prod.stock) ? prod.stock : ''}" placeholder="∞"
             title="Unidades disponibles (vacío = sin control de stock)" class="form-input" style="width: 68px; padding: 0.35rem 0.5rem; font-size: 0.85rem;"
@@ -816,7 +797,7 @@ function renderCatalogTable() {
             : `<button class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}" style="cursor: pointer; border: none;" onclick="toggleProductStock('${prod.id}', ${!prod.in_stock})" title="Sin control de unidades: clic para cambiar"><span>${prod.in_stock ? 'En Stock' : 'Agotado'}</span></button>`}
         </div>
       </td>
-      <td style="text-align: right;">
+      <td class="cell-actions" style="text-align: right;">
         <div class="table-action-btns" style="justify-content: flex-end;">
           <button class="btn-op-action btn-op-photo" onclick="openEditProductModal('${prod.id}')" title="Cambiar Fotos y Datos">
             ${window.ICONS.image || ''}
@@ -904,148 +885,122 @@ async function toggleProductStock(id, inStock) {
   }
 }
 
-// --- MODAL DE DAR DE ALTA JOYA (SUBIDA LOCAL O LINK) ---
+// --- FICHA DE JOYA (ALTA Y EDICIÓN): datos primero, fotos compactas ---
+
+// Foto con miniatura + "Subir foto" (también se puede arrastrar) + "Pegar link".
+// Mantiene los ids que usa bindUploadZone: {prefix}-zone/-file/-preview/-status y el input del link.
+function photoField({ prefix, inputId, label, url, status }) {
+  return `
+    <div class="photo-field">
+      <div class="photo-field-thumb">
+        <img src="${url || ''}" id="${prefix}-preview" alt="${label}" ${url ? '' : 'style="display: none;"'}>
+      </div>
+      <div class="photo-field-body">
+        <div class="photo-field-label">${label}</div>
+        <div id="${prefix}-status" class="photo-field-status">${status}</div>
+        <div class="photo-field-actions">
+          <div class="photo-btn" id="${prefix}-zone" role="button" tabindex="0"
+            onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.querySelector('input').click(); }">
+            <input type="file" id="${prefix}-file" accept="image/*" style="display: none;">
+            Subir foto
+          </div>
+          <button type="button" class="photo-btn photo-btn-ghost" onclick="toggleUrlPane('${prefix}')">Pegar link</button>
+        </div>
+        <div id="${prefix}-pane-url" class="photo-field-url" style="display: none;">
+          <input type="url" id="${inputId}" class="form-input" placeholder="https://..." value="${url || ''}">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleUrlPane(prefix) {
+  const pane = document.getElementById(`${prefix}-pane-url`);
+  if (!pane) return;
+  const show = pane.style.display === 'none';
+  pane.style.display = show ? 'block' : 'none';
+  if (show) pane.querySelector('input').focus();
+}
+
+// Campos compartidos por el alta y la edición (ids con prefijo new- o edit-)
+function productFields(p, prod) {
+  const isEdit = p === 'edit';
+  return `
+    <div class="form-group">
+      <label class="form-label">Nombre de la joya</label>
+      <input type="text" id="${p}-prod-name" class="form-input" value="${isEdit ? (prod.name || '').replace(/"/g, '&quot;') : ''}" placeholder="Ej. Gargantilla Solitario" required>
+    </div>
+
+    <div class="form-row product-grid-2">
+      <div class="form-group">
+        <label class="form-label">Tipo de joya</label>
+        <select id="${p}-prod-category" class="form-select">
+          ${optionTags(AdminState.options.categories, isEdit ? prod.category : '', isEdit ? prod.category_label : '')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Material</label>
+        <select id="${p}-prod-metal" class="form-select">
+          ${optionTags(AdminState.options.materials, isEdit ? prod.metal_group : '', isEdit ? prod.metal : '')}
+        </select>
+      </div>
+    </div>
+    <p class="product-hint">¿Falta una opción? Agregala en <a href="#" onclick="event.preventDefault(); openOptionsModal();">Categorías y materiales</a>.</p>
+
+    <div class="form-row product-grid-2 product-grid-tight">
+      <div class="form-group">
+        <label class="form-label">Precio (ARS)</label>
+        <input type="number" id="${p}-prod-price" class="form-input" min="1" inputmode="numeric" value="${isEdit ? (prod.price || '') : ''}" placeholder="Ej. 320000" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Stock (unidades)</label>
+        <input type="number" min="0" id="${p}-prod-units" class="form-input" inputmode="numeric"
+          value="${isEdit ? (Number.isInteger(prod.stock) ? prod.stock : '') : '1'}" placeholder="Vacío = sin control">
+      </div>
+    </div>
+
+    <div class="form-row product-grid-2">
+      <div class="form-group">
+        <label class="form-label">Talles o medidas</label>
+        <input type="text" id="${p}-prod-sizes" class="form-input" value="${isEdit ? (prod.sizes || []).join(', ') : ''}" placeholder="Ej. 14, 16, 18 (vacío = Único)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Etiqueta</label>
+        <input type="text" id="${p}-prod-badge" class="form-input" value="${isEdit ? (prod.badge || '').replace(/"/g, '&quot;') : 'Nuevo'}" placeholder="Ej. Nuevo, Best Seller">
+      </div>
+    </div>
+  `;
+}
+
 function openCreateProductModal() {
   const overlay = document.getElementById('admin-modal-overlay');
   const container = document.getElementById('admin-modal-content');
 
-  const defaultImg = "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85";
-  const defaultSecImg = "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85";
-
   container.innerHTML = `
-    <div class="admin-modal-card" style="max-width: 680px;">
+    <div class="admin-modal-card product-editor">
       <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
-      <h2 class="admin-modal-title">Dar de Alta Nueva Joya</h2>
-      <p class="admin-modal-subtitle">Podés subir las fotos directamente desde tu computadora o pegar un enlace web.</p>
+      <div class="product-editor-head">
+        <span class="product-editor-eyebrow">Catálogo</span>
+        <h2 class="admin-modal-title">Nueva joya</h2>
+      </div>
 
       <form id="create-product-form" onsubmit="handleCreateProductSubmit(event)">
-        
-        <div class="form-group" style="margin-bottom: 1.2rem;">
-          <label class="form-label">Nombre de la Pieza</label>
-          <input type="text" id="new-prod-name" class="form-input" placeholder="Ej. Gargantilla Solitario Brilliante" required>
+        ${productFields('new')}
+
+        <div class="product-section-title">Fotos</div>
+        <div class="photo-grid">
+          ${photoField({ prefix: 'new-pri', inputId: 'new-prod-img', label: 'Foto principal', url: '', status: 'Obligatoria' })}
+          ${photoField({ prefix: 'new-sec', inputId: 'new-prod-sec-img', label: 'Foto de detalle', url: '', status: 'Opcional' })}
         </div>
 
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Tipo de joya</label>
-            <select id="new-prod-category" class="form-select">
-              ${optionTags(AdminState.options.categories, '')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Material</label>
-            <select id="new-prod-metal" class="form-select">
-              ${optionTags(AdminState.options.materials, '')}
-            </select>
-          </div>
-        </div>
-        <p style="font-size: 0.72rem; color: var(--admin-text-muted); margin: -0.6rem 0 1.2rem;">
-          ¿Falta alguna opción? Agregala en <a href="#" onclick="event.preventDefault(); openOptionsModal();" style="color: var(--admin-rose-deep); font-weight: 600;">Categorías y materiales</a>.
-        </p>
-
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Talles o medidas (separados por coma)</label>
-            <input type="text" id="new-prod-sizes" class="form-input" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Stock (unidades)</label>
-            <input type="number" min="0" id="new-prod-units" class="form-input" value="1" placeholder="Vacío = sin control">
-          </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea id="new-prod-desc" class="form-input" rows="3" placeholder="Terminación, cierre, engaste, medidas..."></textarea>
         </div>
 
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Precio en ARS ($)</label>
-            <input type="number" id="new-prod-price" class="form-input" placeholder="Ej. 320000" min="100" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Etiqueta / Badge Promocional</label>
-            <input type="text" id="new-prod-badge" class="form-input" placeholder="Ej. Nuevo / Best Seller / Edición Limitada" value="Nuevo">
-          </div>
-        </div>
-
-        <!-- FOTOGRAFÍA PRINCIPAL -->
-        <div style="background: #FFFDFD; border: 1px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-            <label class="form-label" style="margin: 0;">Fotografía Principal (Portada de la Joya)</label>
-            <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="new-pri-tab-local" onclick="toggleUploadTab('new-pri', 'local')">Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="new-pri-tab-url" onclick="toggleUploadTab('new-pri', 'url')">Enlace URL</button>
-            </div>
-          </div>
-
-          <!-- Opción 1: Archivo local -->
-          <div id="new-pri-pane-local">
-            <div class="upload-zone-wrapper" id="new-pri-zone">
-              <input type="file" id="new-pri-file" accept="image/*" style="display: none;">
-              <div class="upload-zone-icon">
-                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
-              </div>
-              <div class="upload-zone-title">Hacé clic para elegir una foto o arrastrala acá</div>
-              <div class="upload-zone-desc">Formatos: JPG, PNG, WebP o AVIF (sin límites ajetreados)</div>
-            </div>
-          </div>
-
-          <!-- Opción 2: URL externa -->
-          <div id="new-pri-pane-url" style="display: none; margin-top: 0.6rem;">
-            <input type="url" id="new-prod-img" class="form-input" placeholder="https://..." value="${defaultImg}">
-          </div>
-
-          <!-- Preview & Estado -->
-          <div class="image-live-preview-box">
-            <img src="${defaultImg}" id="new-pri-preview" class="image-live-preview-img" alt="Vista previa principal">
-            <div class="image-preview-info">
-              <div class="image-preview-filename">Foto de Portada</div>
-              <div id="new-pri-status" class="image-preview-status">Lista para incorporar</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- FOTOGRAFÍA SECUNDARIA (OPCIONAL) -->
-        <div style="background: #FFFDFD; border: 1px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-            <label class="form-label" style="margin: 0;">Fotografía Secundaria (Detalle o puesta en modelo)</label>
-            <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="new-sec-tab-local" onclick="toggleUploadTab('new-sec', 'local')">Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="new-sec-tab-url" onclick="toggleUploadTab('new-sec', 'url')">Enlace URL</button>
-            </div>
-          </div>
-
-          <div id="new-sec-pane-local">
-            <div class="upload-zone-wrapper" id="new-sec-zone">
-              <input type="file" id="new-sec-file" accept="image/*" style="display: none;">
-              <div class="upload-zone-icon">
-                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
-              </div>
-              <div class="upload-zone-title">Subir foto secundaria opcional</div>
-              <div class="upload-zone-desc">Se mostrará al pasar el cursor o en la galería detallada</div>
-            </div>
-          </div>
-
-          <div id="new-sec-pane-url" style="display: none; margin-top: 0.6rem;">
-            <input type="url" id="new-prod-sec-img" class="form-input" placeholder="https://..." value="${defaultSecImg}">
-          </div>
-
-          <div class="image-live-preview-box">
-            <img src="${defaultSecImg}" id="new-sec-preview" class="image-live-preview-img" alt="Vista previa secundaria">
-            <div class="image-preview-info">
-              <div class="image-preview-filename">Foto de Detalle / Ángulo Secundario</div>
-              <div id="new-sec-status" class="image-preview-status">Lista</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 1.6rem;">
-          <label class="form-label">Descripción Editorial & Taller</label>
-          <textarea id="new-prod-desc" class="form-input" rows="3" placeholder="Detalles de manufactura artesanal, tipo de engaste, cierre o terminación..."></textarea>
-        </div>
-
-        <div style="display: flex; gap: 0.8rem; justify-content: flex-end;">
+        <div class="product-editor-actions">
           <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
-          <button type="submit" class="btn-luxury">
-            <span>Incorporar Joya al Catálogo</span>
-          </button>
+          <button type="submit" class="btn-luxury"><span>Agregar al catálogo</span></button>
         </div>
       </form>
     </div>
@@ -1053,8 +1008,6 @@ function openCreateProductModal() {
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-
-  // Configurar zonas de subida local
   setTimeout(() => {
     bindUploadZone('new-pri-zone', 'new-pri-file', 'new-prod-img', 'new-pri-preview', 'new-pri-status');
     bindUploadZone('new-sec-zone', 'new-sec-file', 'new-prod-sec-img', 'new-sec-preview', 'new-sec-status');
@@ -1102,176 +1055,55 @@ async function handleCreateProductSubmit(e) {
   }
 }
 
-// --- MODAL DE EDICIÓN DE JOYA Y CAMBIO DE FOTOS (SUBIDA LOCAL O LINK) ---
+// --- EDICIÓN DE JOYA ---
 function openEditProductModal(productId) {
   const prod = (AdminState.products || []).find(p => p.id === productId);
   if (!prod) return;
 
   const overlay = document.getElementById('admin-modal-overlay');
   const container = document.getElementById('admin-modal-content');
-
-  const currentPriImg = prod.primary_image || "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=900&q=85";
-  const currentSecImg = prod.secondary_image || "";
+  const priImg = prod.primary_image || '';
+  const secImg = prod.secondary_image && prod.secondary_image !== prod.primary_image ? prod.secondary_image : '';
 
   container.innerHTML = `
-    <div class="admin-modal-card" style="max-width: 700px;">
+    <div class="admin-modal-card product-editor">
       <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
-      
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.2rem;">
-        <div>
-          <span style="font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--admin-rose-deep); font-weight: 700;">
-            Editor de Pieza & Fotos
+      <div class="product-editor-head">
+        <span class="product-editor-eyebrow">Editar joya</span>
+        <h2 class="admin-modal-title">${prod.name}</h2>
+        <div class="product-editor-meta">
+          <span>Código ${prod.id}</span>
+          <span class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}">
+            <span>${prod.in_stock ? (Number.isInteger(prod.stock) ? `En stock · ${prod.stock} u.` : 'En stock') : 'Agotado'}</span>
           </span>
-          <h2 class="admin-modal-title" style="margin-top: 0.2rem;">${prod.name}</h2>
-          <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">Código: ${prod.id}</div>
         </div>
-        <span class="badge-status ${prod.in_stock ? 'badge-approved' : 'badge-rejected'}">
-          ${prod.in_stock ? 'En Stock' : 'Agotado'}
-        </span>
       </div>
 
       <form id="edit-product-form" onsubmit="handleEditProductSubmit(event, '${prod.id}')">
-        
-        <!-- FOTOGRAFÍA PRINCIPAL ACTUAL + REEMPLAZO -->
-        <div style="background: #FFFDFD; border: 1.5px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-            <strong style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-main);">
-              Fotografía Principal (Portada)
-            </strong>
-            <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="edit-pri-tab-local" onclick="toggleUploadTab('edit-pri', 'local')">Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="edit-pri-tab-url" onclick="toggleUploadTab('edit-pri', 'url')">Enlace URL</button>
-            </div>
-          </div>
+        ${productFields('edit', prod)}
 
-          <div id="edit-pri-pane-local">
-            <div class="upload-zone-wrapper" id="edit-pri-zone">
-              <input type="file" id="edit-pri-file" accept="image/*" style="display: none;">
-              <div class="upload-zone-icon">
-                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
-              </div>
-              <div class="upload-zone-title">Hacé clic para cambiar por un archivo de tu PC</div>
-              <div class="upload-zone-desc">O arrastrá una nueva foto directamente acá</div>
-            </div>
-          </div>
+        <label class="product-check">
+          <input type="checkbox" id="edit-prod-stock" ${prod.in_stock ? 'checked' : ''}>
+          <span>Disponible para la venta <small>(solo cuenta si no cargás unidades de stock)</small></span>
+        </label>
 
-          <div id="edit-pri-pane-url" style="display: none; margin-top: 0.6rem;">
-            <input type="url" id="edit-prod-img" class="form-input" placeholder="https://..." value="${currentPriImg}">
-          </div>
-
-          <div class="image-live-preview-box">
-            <img src="${currentPriImg}" id="edit-pri-preview" class="image-live-preview-img" alt="Foto principal">
-            <div class="image-preview-info">
-              <div class="image-preview-filename">Foto Principal Activa</div>
-              <div id="edit-pri-status" class="image-preview-status">En uso en el catálogo</div>
-            </div>
-          </div>
+        <div class="product-section-title">Fotos</div>
+        <div class="photo-grid">
+          ${photoField({ prefix: 'edit-pri', inputId: 'edit-prod-img', label: 'Foto principal', url: priImg, status: 'En uso en la tienda' })}
+          ${photoField({ prefix: 'edit-sec', inputId: 'edit-prod-sec-img', label: 'Foto de detalle', url: secImg, status: secImg ? 'En uso en la tienda' : 'Opcional, sin foto' })}
         </div>
 
-        <!-- FOTOGRAFÍA SECUNDARIA ACTUAL + REEMPLAZO -->
-        <div style="background: #FFFDFD; border: 1.5px solid var(--admin-rose-border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.4rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-            <strong style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-text-main);">
-              Fotografía Secundaria (Detalle o puesta en cuerpo)
-            </strong>
-            <div class="upload-method-tabs" style="margin: 0;">
-              <button type="button" class="upload-tab-btn active" id="edit-sec-tab-local" onclick="toggleUploadTab('edit-sec', 'local')">Subir desde mi PC</button>
-              <button type="button" class="upload-tab-btn" id="edit-sec-tab-url" onclick="toggleUploadTab('edit-sec', 'url')">Enlace URL</button>
-            </div>
-          </div>
-
-          <div id="edit-sec-pane-local">
-            <div class="upload-zone-wrapper" id="edit-sec-zone">
-              <input type="file" id="edit-sec-file" accept="image/*" style="display: none;">
-              <div class="upload-zone-icon">
-                ${window.ICONS.upload || '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>'}
-              </div>
-              <div class="upload-zone-title">Subir o cambiar foto secundaria</div>
-              <div class="upload-zone-desc">Ideal para mostrar detalles de engaste o vista alternativa</div>
-            </div>
-          </div>
-
-          <div id="edit-sec-pane-url" style="display: none; margin-top: 0.6rem;">
-            <input type="url" id="edit-prod-sec-img" class="form-input" placeholder="https://..." value="${currentSecImg}">
-          </div>
-
-          <div class="image-live-preview-box">
-            <img src="${currentSecImg || 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=900&q=85'}" id="edit-sec-preview" class="image-live-preview-img" alt="Foto secundaria">
-            <div class="image-preview-info">
-              <div class="image-preview-filename">Foto Secundaria</div>
-              <div id="edit-sec-status" class="image-preview-status">${currentSecImg ? 'Activa' : 'Opcional (sin foto aún)'}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- DATOS EDITABLES DE LA JOYA -->
-        <div class="form-group" style="margin-bottom: 1.2rem;">
-          <label class="form-label">Nombre de la Joya</label>
-          <input type="text" id="edit-prod-name" class="form-input" value="${prod.name || ''}" required>
-        </div>
-
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Tipo de joya</label>
-            <select id="edit-prod-category" class="form-select">
-              ${optionTags(AdminState.options.categories, prod.category, prod.category_label)}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Material</label>
-            <select id="edit-prod-metal" class="form-select">
-              ${optionTags(AdminState.options.materials, prod.metal_group, prod.metal)}
-            </select>
-            <span style="font-size: 0.72rem; color: var(--admin-text-muted);">Actual: ${prod.metal || '-'}</span>
-          </div>
-        </div>
-
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Talles o medidas (separados por coma)</label>
-            <input type="text" id="edit-prod-sizes" class="form-input" value="${(prod.sizes || []).join(', ')}" placeholder="Ej. 14, 16, 18 · 40 cm, 45 cm · vacío = Único">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Stock (unidades)</label>
-            <input type="number" min="0" id="edit-prod-units" class="form-input" value="${Number.isInteger(prod.stock) ? prod.stock : ''}" placeholder="Vacío = sin control">
-          </div>
-        </div>
-
-        <div class="form-row" style="margin-bottom: 1.2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Precio en ARS ($)</label>
-            <input type="number" id="edit-prod-price" class="form-input" value="${prod.price || 0}" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Etiqueta / Badge</label>
-            <input type="text" id="edit-prod-badge" class="form-input" value="${prod.badge || ''}" placeholder="Ej. Best Seller, Edición Limitada...">
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 1.2rem;">
-          <label class="form-label">Disponibilidad en Taller</label>
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem;">
-            <input type="checkbox" id="edit-prod-stock" ${prod.in_stock ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--admin-rose-primary);">
-            <span>Disponible para compra (se usa cuando no cargás unidades de stock)</span>
-          </label>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 1.6rem;">
-          <label class="form-label">Descripción Editorial & Orfebrería</label>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
           <textarea id="edit-prod-desc" class="form-input" rows="3">${prod.description || ''}</textarea>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--admin-rose-border); padding-top: 1.2rem;">
-          <button type="button" class="btn-op-action btn-op-danger" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\\'")}')">
-            ${window.ICONS.trash || ''} <span>Eliminar Joya</span>
+        <div class="product-editor-actions">
+          <button type="button" class="btn-op-action btn-op-danger product-delete" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\'")}')">
+            ${window.ICONS.trash || ''} <span>Eliminar</span>
           </button>
-          
-          <div style="display: flex; gap: 0.8rem;">
-            <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
-            <button type="submit" class="btn-luxury">
-              <span>Guardar Cambios</span>
-            </button>
-          </div>
+          <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
+          <button type="submit" class="btn-luxury"><span>Guardar cambios</span></button>
         </div>
       </form>
     </div>
@@ -1279,8 +1111,6 @@ function openEditProductModal(productId) {
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-
-  // Configurar zonas de subida local
   setTimeout(() => {
     bindUploadZone('edit-pri-zone', 'edit-pri-file', 'edit-prod-img', 'edit-pri-preview', 'edit-pri-status');
     bindUploadZone('edit-sec-zone', 'edit-sec-file', 'edit-prod-sec-img', 'edit-sec-preview', 'edit-sec-status');
@@ -1534,16 +1364,8 @@ async function fetchSettings() {
       document.getElementById('set-discount').value = s.transfer_discount_pct || 15;
       document.getElementById('set-hero-title').value = s.hero_title || '';
       document.getElementById('set-hero-desc').value = s.hero_desc || '';
-      // El Access Token nunca vuelve del servidor: solo se indica si está configurado
-      const mpTokenInput = document.getElementById('set-mp-access-token');
-      if (mpTokenInput) {
-        mpTokenInput.value = '';
-        mpTokenInput.placeholder = s.mercadopago_configured
-          ? 'Access Token configurado (oculto). Pegá uno nuevo solo para reemplazarlo'
-          : 'Pegá aquí tu Access Token (APP_USR-...)';
-      }
-      const mpPubInput = document.getElementById('set-mp-public-key');
-      if (mpPubInput) mpPubInput.value = s.mercadopago_public_key || '';
+      document.getElementById('set-whatsapp').value = s.whatsapp_number || '';
+      document.getElementById('set-instagram').value = s.instagram_url || '';
     }
   } catch (e) {
     console.error(e);
@@ -1561,8 +1383,8 @@ function setupSettingsForm() {
         transfer_discount_pct: parseInt(document.getElementById('set-discount').value),
         hero_title: document.getElementById('set-hero-title').value,
         hero_desc: document.getElementById('set-hero-desc').value,
-        mercadopago_access_token: document.getElementById('set-mp-access-token') ? document.getElementById('set-mp-access-token').value.trim() : '',
-        mercadopago_public_key: document.getElementById('set-mp-public-key') ? document.getElementById('set-mp-public-key').value.trim() : ''
+        whatsapp_number: document.getElementById('set-whatsapp').value.trim(),
+        instagram_url: document.getElementById('set-instagram').value.trim()
       };
 
       try {
@@ -1576,7 +1398,7 @@ function setupSettingsForm() {
         });
         const result = await res.json();
         if (result.success) {
-          showToast(result.message && result.message.includes('Vercel') ? result.message : 'Textos y ofertas actualizados en la tienda');
+          showToast('Textos y ofertas actualizados en la tienda');
           fetchSettings();
         } else {
           showToast(result.error || 'Error guardando ajustes');
@@ -1613,17 +1435,17 @@ function renderTeamTable() {
 
   tbody.innerHTML = AdminState.users.map(u => `
     <tr>
-      <td>
+      <td class="cell-head">
         <strong style="display: block;">${u.name}</strong>
         <span style="font-size: 0.72rem; color: var(--text-muted);">${u.id}</span>
       </td>
-      <td>${u.email}</td>
-      <td>
+      <td data-label="Correo">${u.email}</td>
+      <td data-label="Rol">
         <span class="user-role-badge ${u.role === 'admin' ? 'role-admin' : 'role-operario'}">
           ${u.role === 'admin' ? 'Administrador' : 'Operario'}
         </span>
       </td>
-      <td style="font-size: 0.75rem; color: var(--text-muted);">${u.created_at}</td>
+      <td data-label="Alta" style="font-size: 0.75rem; color: var(--text-muted);">${u.created_at}</td>
     </tr>
   `).join('');
 }

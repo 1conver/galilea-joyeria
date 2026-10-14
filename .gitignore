@@ -9,3 +9,6 @@ node_modules/
 
 # Cuentas creadas desde el panel (tienen hash de contraseña)
 data/users_extra.json
+# Token renovado y publicaciones de Instagram guardadas en local
+data/instagram_auth.json
+data/instagram_cache.json

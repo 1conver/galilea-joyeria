@@ -893,3 +893,243 @@ body.admin-body {
   color: var(--admin-warning-text);
   border-color: var(--admin-warning-border);
 }
+
+/* ==========================================================================
+   CELULAR: tablas como tarjetas, pestañas en grilla y ventanas desde abajo
+   ========================================================================== */
+@media (max-width: 760px) {
+  .admin-topbar { gap: 0.7rem; }
+  .admin-switch-strip { padding: 0.6rem 0.75rem !important; }
+  .admin-module-switch {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    overflow: visible !important;
+    white-space: normal !important;
+    border-radius: 16px;
+  }
+  .admin-tab-btn {
+    justify-content: center;
+    padding: 0.6rem 0.4rem !important;
+    font-size: 0.6rem !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+    border-radius: 12px !important;
+  }
+  .admin-tab-btn svg { flex-shrink: 0; }
+
+  main.container { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+  .stats-strip { gap: 0.7rem; margin: 1.1rem 0 1.3rem; }
+  .kpi-card { padding: 0.9rem 1rem !important; border-radius: 12px !important; }
+  .kpi-label { font-size: 0.56rem !important; letter-spacing: 0.1em !important; }
+  .kpi-val { font-size: 1.6rem !important; }
+  .kpi-sub { font-size: 0.64rem !important; }
+  .admin-system-status { margin: -0.3rem 0 1.2rem; }
+  .system-pill { font-size: 0.64rem; }
+
+  .admin-section-head { flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.2rem !important; }
+  .admin-section-head h1 { font-size: 1.6rem !important; line-height: 1.15 !important; }
+  .admin-section-head p { font-size: 0.78rem !important; }
+  .admin-section-head .btn-luxury,
+  .admin-section-head .btn-luxury-outline { flex: 1 1 auto; justify-content: center; }
+
+  .admin-toolbar { padding: 0.8rem !important; gap: 0.7rem; }
+  .admin-search-wrap { max-width: none; width: 100%; }
+  .admin-filters-row > div { display: flex; align-items: center; gap: 0.5rem; }
+  .admin-filters-row .select-minimal { flex: 1; min-width: 0; }
+
+  /* Tablas → tarjetas */
+  .admin-table-card { background: transparent !important; border: none !important; box-shadow: none !important; overflow: visible !important; }
+  .admin-table, .admin-table tbody { display: block; width: 100%; }
+  .admin-table thead { display: none; }
+  .admin-table tr {
+    display: block;
+    background: var(--admin-surface-card);
+    border: 1px solid var(--admin-rose-border);
+    border-radius: 14px;
+    padding: 0.3rem 0.9rem;
+    margin-bottom: 0.8rem;
+    box-shadow: var(--admin-shadow-soft);
+  }
+  .admin-table tr:hover td { background: transparent !important; }
+  .admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.55rem 0 !important;
+    border-bottom: 1px dashed var(--admin-rose-border) !important;
+    text-align: right;
+    font-size: 0.8rem;
+  }
+  .admin-table td:last-child { border-bottom: none !important; }
+  .admin-table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--admin-text-muted);
+    text-align: left;
+  }
+  /* etiqueta a la izquierda, contenido apilado a la derecha */
+  .admin-table td[data-label] { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.8rem; row-gap: 0.15rem; }
+  .admin-table td[data-label]::before { grid-column: 1; grid-row: 1 / span 4; align-self: center; }
+  .admin-table td[data-label] > * { grid-column: 2; justify-self: end; text-align: right; }
+  .admin-table td.cell-head { display: block; text-align: left; padding-top: 0.7rem !important; }
+  .admin-table td.cell-actions { display: block; text-align: left !important; }
+  .admin-table td.cell-actions .table-action-btns { justify-content: flex-start !important; flex-wrap: wrap; gap: 0.4rem; }
+  .admin-table td[colspan] { display: block; text-align: center; padding: 2rem 0.5rem !important; }
+  .admin-table td .form-input { max-width: 120px; }
+
+  /* Ventanas: hoja que sube desde abajo, formularios en una columna */
+  #admin-modal-overlay { align-items: flex-end !important; }
+  .admin-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    padding: 1.4rem 1.1rem 1.6rem !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+  .admin-modal-title { font-size: 1.55rem; padding-right: 2.2rem; }
+  .admin-modal-card .form-row { grid-template-columns: 1fr !important; gap: 0.8rem !important; }
+  .admin-modal-card [style*="justify-content: space-between"] { flex-wrap: wrap; gap: 0.6rem; }
+  .admin-modal-card .upload-method-tabs { width: 100%; }
+  .admin-modal-card .upload-tab-btn { flex: 1; }
+  .admin-order-head { flex-direction: column; gap: 0.5rem; }
+  .admin-order-head h2 { font-size: 1.5rem !important; line-height: 1.15; }
+  .admin-order-head > div:last-child { text-align: left !important; }
+  .client-contact-card { grid-template-columns: 1fr !important; }
+
+  .admin-team-grid { grid-template-columns: 1fr !important; gap: 1.4rem !important; }
+  .admin-form-card { padding: 1.2rem !important; }
+  .admin-form-card .form-row { grid-template-columns: 1fr !important; gap: 0 !important; }
+}
+
+/* ==========================================================================
+   FICHA DE JOYA (alta y edición): datos primero, fotos compactas
+   ========================================================================== */
+.product-editor { max-width: 720px !important; }
+.product-editor-head { margin-bottom: 1.3rem; padding-right: 2.6rem; }
+.product-editor-eyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--admin-rose-deep);
+  font-weight: 700;
+}
+.product-editor .admin-modal-title { margin: 0.15rem 0 0.4rem; font-size: 1.9rem; }
+.product-editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--admin-text-muted);
+}
+.product-editor .form-group { margin-bottom: 1rem; }
+.product-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.product-hint { font-size: 0.72rem; color: var(--admin-text-muted); margin: -0.5rem 0 1rem; }
+.product-hint a { color: var(--admin-rose-deep); font-weight: 600; }
+.product-check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.82rem;
+  margin: 0.1rem 0 1.2rem;
+  cursor: pointer;
+  color: var(--admin-text-main);
+}
+.product-check input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 0.1rem; accent-color: var(--admin-rose-primary); }
+.product-check small { display: block; color: var(--admin-text-muted); font-size: 0.7rem; }
+.product-section-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--admin-text-main);
+  margin: 0.3rem 0 0.7rem;
+}
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.2rem; }
+.photo-field {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--admin-rose-border);
+  border-radius: 14px;
+  background: #FFFDFD;
+}
+.photo-field-thumb {
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--admin-subtle) center / 26px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A5808B' stroke-width='1.4'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21'/%3E%3C/svg%3E");
+}
+.photo-field-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-field-body { display: grid; gap: 0.3rem; min-width: 0; }
+.photo-field-label { font-size: 0.8rem; font-weight: 700; color: var(--admin-text-main); }
+.photo-field-status { font-size: 0.7rem; color: var(--admin-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.photo-field-status span { white-space: nowrap; }
+.photo-field-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.15rem; }
+.photo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--admin-rose-gradient);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  user-select: none;
+}
+.photo-btn-ghost { background: #FFFFFF; color: var(--admin-rose-deep); border-color: var(--admin-rose-border); }
+.photo-btn.dragover { outline: 2px dashed var(--admin-rose-primary); outline-offset: 3px; }
+.photo-field-url .form-input { font-size: 0.75rem; padding: 0.45rem 0.7rem; }
+.product-editor-actions {
+  position: sticky;
+  bottom: -2.4rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin: 1.2rem -2.4rem -2.4rem;
+  padding: 1rem 2.4rem;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--admin-rose-border);
+}
+.product-delete { margin-right: auto; }
+
+@media (max-width: 760px) {
+  .product-editor .admin-modal-title { font-size: 1.45rem; }
+  .product-editor .form-row { grid-template-columns: 1fr !important; gap: 0 !important; }
+  .product-editor .product-grid-tight { grid-template-columns: 1fr 1fr !important; gap: 0 0.7rem !important; }
+  .photo-grid { grid-template-columns: 1fr; gap: 0.6rem; }
+  .photo-field { grid-template-columns: 76px minmax(0, 1fr); padding: 0.65rem; }
+  .photo-field-thumb { width: 76px; height: 76px; }
+  .product-editor-actions {
+    bottom: -1.6rem;
+    gap: 0.5rem;
+    margin: 1rem -1.1rem -1.6rem;
+    padding: 0.7rem 1.1rem calc(0.7rem + env(safe-area-inset-bottom));
+  }
+  .product-editor-actions .btn-luxury { flex: 1; justify-content: center; padding: 0.75rem 1rem !important; }
+  .product-editor-actions .btn-luxury-outline { padding: 0.75rem 0.9rem !important; }
+  .product-delete { margin-right: 0; padding: 0.6rem 0.7rem !important; }
+  .product-delete span { display: none; }
+}
+
+/* Bloques del formulario de ajustes */
+.settings-block { margin: 0.5rem 0 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--admin-rose-border); }
+.settings-block-title { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 400; color: var(--admin-text-main); margin-bottom: 0.2rem; }
+.settings-block-desc { font-size: 0.78rem; color: var(--admin-text-secondary); margin-bottom: 1rem; }
+.settings-block .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

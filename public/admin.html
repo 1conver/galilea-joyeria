@@ -109,10 +109,6 @@
           </button>
         </nav>
 
-        <div style="font-size: 0.72rem; color: var(--admin-text-secondary); display: flex; align-items: center; gap: 0.4rem;">
-          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2DA44E;"></span>
-          Cobros & Archivos: <strong style="color: #205C33;">Persistencia Local Activa</strong>
-        </div>
       </div>
     </div>
 
@@ -151,7 +147,7 @@
         </div>
         <div id="admin-system-status" class="admin-system-status"></div>
 
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
+        <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
           <div>
             <h1 class="serif-font" style="font-size: 2.2rem; color: var(--text-primary); margin-bottom: 0.2rem;">
               Bandeja de Pedidos & Logística
@@ -233,7 +229,7 @@
            MÓDULO 2: CATÁLOGO & PRECIOS (SOLO ADMIN)
            ===================================================================== -->
       <section id="module-catalog" class="admin-section-view" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h1 class="serif-font" style="font-size: 2.3rem; color: var(--admin-text-main); margin-bottom: 0.2rem;">
               Administración de Catálogo & Joyas
@@ -305,7 +301,7 @@
            MÓDULO 3: OFERTAS & TEXTOS DE PORTADA (SOLO ADMIN)
            ===================================================================== -->
       <section id="module-marketing" class="admin-section-view" style="display: none;">
-        <div style="margin-bottom: 2rem;">
+        <div class="admin-section-head" style="margin-bottom: 2rem;">
           <h1 class="serif-font" style="font-size: 2.2rem; color: var(--text-primary); margin-bottom: 0.2rem;">
             Textos, Ofertas & Banners de Tienda
           </h1>
@@ -343,25 +339,19 @@
               <textarea id="set-hero-desc" class="form-input" rows="3" required></textarea>
             </div>
 
-            <!-- PASARELA DE COBRO OFICIAL (MERCADO PAGO) -->
-            <div style="margin: 2rem 0 1.5rem; border-top: 1px solid var(--admin-rose-border); padding-top: 1.5rem;">
-              <h3 style="font-size: 1.1rem; font-family: 'Playfair Display', serif; color: var(--admin-text-primary); margin-bottom: 0.35rem;">
-                Pasarela Oficial de Mercado Pago (Checkout Pro)
-              </h3>
-              <p style="font-size: 0.8rem; color: var(--admin-text-secondary); margin-bottom: 1.2rem; line-height: 1.5;">
-                Configurá el Access Token de tu cuenta de Mercado Pago Argentina para que los pagos de los clientes se depositen directamente en tu cuenta. Podés obtener tus credenciales desde tu panel de desarrollador en <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noopener" style="color: var(--admin-rose-deep); text-decoration: underline; font-weight: 500;">Mercado Pago Developers</a>.
-              </p>
-
-              <div class="form-group" style="margin-bottom: 1.2rem;">
-                <label class="form-label">Access Token (APP_USR-...)</label>
-                <input type="password" id="set-mp-access-token" class="form-input" autocomplete="off" placeholder="Pegá aquí tu Access Token (APP_USR-...)">
-                <span style="font-size: 0.72rem; color: var(--admin-text-muted);">Requerido para generar los links de cobro oficiales y recibir el dinero en tu cuenta.</span>
-              </div>
-
-              <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label class="form-label">Public Key (APP_USR-...)</label>
-                <input type="text" id="set-mp-public-key" class="form-input" placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-                <span style="font-size: 0.72rem; color: var(--admin-text-muted);">Clave pública institucional de tu aplicación.</span>
+            <!-- CONTACTO Y REDES (los usan la tienda, el chat y los botones de WhatsApp/Instagram) -->
+            <div class="settings-block">
+              <h3 class="settings-block-title">Contacto y redes</h3>
+              <p class="settings-block-desc">Se usan en los botones de WhatsApp e Instagram de la tienda y en las respuestas del chat.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">WhatsApp (con código de país)</label>
+                  <input type="tel" id="set-whatsapp" class="form-input" placeholder="+54 9 11 1234-5678" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Instagram (link o @usuario)</label>
+                  <input type="text" id="set-instagram" class="form-input" placeholder="https://www.instagram.com/usuario" required>
+                </div>
               </div>
             </div>
 
@@ -376,7 +366,7 @@
            MÓDULO 4: GESTIÓN DE EQUIPO & OPERARIOS (SOLO ADMIN)
            ===================================================================== -->
       <section id="module-team" class="admin-section-view" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
           <div>
             <h1 class="serif-font" style="font-size: 2.2rem; color: var(--text-primary); margin-bottom: 0.2rem;">
               Equipo del Atelier & Operarios
@@ -387,7 +377,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; align-items: start;">
+        <div class="admin-team-grid" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; align-items: start;">
           <!-- Tabla de usuarios -->
           <div class="admin-table-card">
             <table class="admin-table">

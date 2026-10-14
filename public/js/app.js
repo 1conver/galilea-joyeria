@@ -43,7 +43,46 @@ document.addEventListener('DOMContentLoaded', () => {
   initAIChatAdvisor();
   handleCheckoutReturn();
   handleTrackingLink();
+  loadInstagramFeed();
 });
+
+// --- CONTACTO Y REDES (editables desde el panel) ---
+
+// Actualiza todos los links de WhatsApp e Instagram con lo cargado en el panel
+function applyContactLinks(settings) {
+  const digits = String(settings.whatsapp_number || '').replace(/\D/g, '');
+  if (digits) {
+    document.querySelectorAll('[data-contact="whatsapp"]').forEach(a => {
+      const text = a.getAttribute('data-wa-text');
+      a.href = `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+    });
+  }
+  if (settings.instagram_url) {
+    document.querySelectorAll('[data-contact="instagram"]').forEach(a => { a.href = settings.instagram_url; });
+    const handle = settings.instagram_url.replace(/\/+$/, '').split('/').pop();
+    document.querySelectorAll('.ig-handle').forEach(el => { el.textContent = '@' + handle; });
+  }
+}
+
+// Últimas publicaciones de Instagram (si el feed está conectado; si no, queda el link al perfil)
+async function loadInstagramFeed() {
+  const grid = document.getElementById('ig-grid');
+  if (!grid) return;
+  try {
+    const data = await fetch('/api/instagram').then(r => r.json());
+    const posts = (data.posts || []).filter(p => /^https:\/\//.test(p.image) && /^https:\/\//.test(p.url));
+    if (!posts.length) return;
+    grid.innerHTML = posts.map(p => `
+      <a href="${p.url}" target="_blank" rel="noopener" class="ig-post" aria-label="Ver publicación en Instagram">
+        <img src="${p.image}" alt="Publicación de Instagram de GALILEA" loading="lazy">
+        ${p.type === 'VIDEO' ? '<span class="ig-post-badge">Video</span>' : ''}
+      </a>
+    `).join('');
+    grid.hidden = false;
+  } catch (e) {
+    console.warn('No se pudo cargar Instagram', e);
+  }
+}
 
 async function fetchStoreSettings() {
   try {
@@ -51,6 +90,7 @@ async function fetchStoreSettings() {
     const data = await res.json();
     if (data.success && data.settings) {
       const s = data.settings;
+      applyContactLinks(s);
       const pct = Number(s.transfer_discount_pct);
       if (pct >= 0 && pct <= 50) AppState.transferDiscountPct = pct;
       // Actualizar Ticker Superior Continuo (Marquee estilo Brooki Bakehouse)
@@ -704,7 +744,7 @@ function openCheckoutModal() {
               </div>
               <div class="form-group">
                 <label class="form-label">Teléfono / WhatsApp</label>
-                <input type="tel" id="chk-phone" class="form-input" placeholder="Ej. +54 9 11 4050-9988" required>
+                <input type="tel" id="chk-phone" class="form-input" placeholder="Ej. 11 2345-6789" required>
               </div>
             </div>
 
@@ -2033,7 +2073,7 @@ function generateAIResponse(rawQuery) {
   // 9. Contacto humano y WhatsApp
   if (['contacto', 'telefono', 'mail', 'whatsapp', 'humano', 'persona', 'asesor real', 'hablar con alguien', 'numero'].some(k => norm.includes(k))) {
     return {
-      text: `Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:\n\n• **WhatsApp Directo:** [+54 9 11 4050-9988](https://wa.me/5491140509988) (Atención personalizada de lunes a sábados).\n• **Correo Institucional:** atelier@galilea-joyeria.com\n• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\nHaciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana.`,
+      text: `Podés ponerte en contacto directo con nuestro equipo de orfebres y asesores a través de:\n\n• **WhatsApp Directo:** [+54 9 11 5419-7890](https://wa.me/5491154197890) (Atención personalizada de lunes a sábados).\n• **Correo Institucional:** atelier@galilea-joyeria.com\n• **Atelier:** Av. Alvear 1850, Ciudad Autónoma de Buenos Aires.\n\nHaciendo clic en el botón de WhatsApp superior podés iniciar una conversación de inmediato con una asesora humana.`,
       products: [],
       suggestions: ["Abrir WhatsApp Oficial", "Ver catálogo de joyas", "Seguir chateando aquí"]
     };
