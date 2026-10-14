@@ -33,7 +33,7 @@ Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http
   (también se abre desde `/?pedido=CODIGO`, el link que va en los emails). No hay cuentas de cliente.
 
 ## Contacto e Instagram
-- WhatsApp e Instagram se editan en `/admin` → Ofertas & Portada → **Contacto y redes**. Los usan los botones de la
+- WhatsApp e Instagram se editan en `/admin` → **Ajustes** → Contacto y redes. Los usan los botones de la
   tienda (encabezado, pie, chat) y las respuestas del chat. Por defecto: +54 9 11 5419-7890 y @galileaacc.
 - Feed de publicaciones (opcional): cargá `INSTAGRAM_ACCESS_TOKEN` en Vercel (token de larga duración de la
   "API de Instagram con inicio de sesión de Instagram", cuenta profesional). Se renueva solo cada 7 días y las

@@ -57,6 +57,7 @@ def create_app():
     app.router.add_static("/css/", path=os.path.join(PUBLIC_DIR, "css"), name="css")
     app.router.add_static("/js/", path=os.path.join(PUBLIC_DIR, "js"), name="js")
     app.router.add_static("/uploads/", path=UPLOADS_DIR, name="uploads")
+    app.router.add_static("/brand/", path=os.path.join(PUBLIC_DIR, "brand"), name="brand")
 
     async def admin_handler(request):
         return web.FileResponse(os.path.join(PUBLIC_DIR, "admin.html"))

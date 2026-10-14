@@ -20,10 +20,10 @@ SETTINGS_KEYS = ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer
 # Contacto editable desde el panel (Ofertas & Portada); estos son los valores si no se cargó otro
 DEFAULT_CONTACT = {"whatsapp_number": "+54 9 11 5419-7890", "instagram_url": "https://www.instagram.com/galileaacc"}
 SHIPPING_LABELS = {
-    "in_workshop": "En Taller (Ajuste de Medidas)",
-    "in_transit": "En Tránsito con Andreani",
-    "delivered": "Entregado a Domicilio",
-    "pending": "Aguardando Cobro"
+    "in_workshop": "En taller",
+    "in_transit": "En camino",
+    "delivered": "Entregado",
+    "pending": "Esperando transferencia"
 }
 
 
@@ -283,11 +283,11 @@ def admin_order_status(req):
     if "payment_status" in data and data["payment_status"] != order.get("payment_status"):
         order["payment_status"] = data["payment_status"]
         if data["payment_status"] == "approved":
-            order["payment_status_label"] = "Aprobado (Acreditación Confirmada)"
-            payments.add_history(order, "Pago acreditado: en preparación en el taller")
+            order["payment_status_label"] = "Pago aprobado"
+            payments.add_history(order, "Pago acreditado, en preparación")
             on_order_approved(order)
         elif data["payment_status"] == "rejected":
-            order["payment_status_label"] = "Rechazado / Anulado"
+            order["payment_status_label"] = "Anulado"
             payments.add_history(order, "Pedido anulado")
     if "tracking_number" in data:
         order["tracking_number"] = str(data["tracking_number"]).strip()[:60]
@@ -303,7 +303,7 @@ def admin_order_status(req):
             payments.add_history(order, "Entregado")
             events.append("delivered")
         elif status == "in_workshop" and "preparación" not in (order.get("history") or [{}])[-1].get("label", ""):
-            payments.add_history(order, "En preparación en el taller")
+            payments.add_history(order, "En preparación")
     if "notes" in data:
         order["notes"] = str(data["notes"])
     for event in events:

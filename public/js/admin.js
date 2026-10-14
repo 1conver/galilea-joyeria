@@ -105,7 +105,7 @@ function setupAuthForm() {
       const btn = document.getElementById('btn-submit-login');
 
       btn.disabled = true;
-      btn.innerHTML = `<span>Verificando credenciales...</span>`;
+      btn.innerHTML = `<span>Ingresando...</span>`;
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -119,17 +119,17 @@ function setupAuthForm() {
           AdminState.token = data.token;
           AdminState.currentUser = data.user;
           localStorage.setItem('galilea_admin_token', data.token);
-          showToast(`Bienvenido al Atelier, ${data.user.name}`);
+          showToast(`Hola, ${data.user.name}`);
           showDashboardView();
           initDashboard();
         } else {
-          showToast(data.error || 'Credenciales incorrectas');
+          showToast(data.error || 'Usuario o contraseña incorrectos');
         }
       } catch (err) {
-        showToast('Error de conexión con el servidor');
+        showToast('Sin conexión, probá de nuevo');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>Ingresar al Sistema</span>`;
+        btn.innerHTML = `<span>Ingresar</span>`;
       }
     });
   }
@@ -216,15 +216,15 @@ function renderKPIs() {
   const statusEl = document.getElementById('admin-system-status');
   if (statusEl) {
     const storage = {
-      redis: ['ok', 'Datos guardados en la base de datos'],
-      archivos: ['ok', 'Datos guardados en archivos locales'],
-      temporal: ['warn', 'Datos temporales: conectá Upstash Redis en Vercel (Storage) para no perder pedidos ni cambios']
+      redis: ['ok', 'Base de datos conectada'],
+      archivos: ['ok', 'Datos en archivos locales'],
+      temporal: ['warn', 'Sin base de datos: los cambios se pierden']
     }[s.storage] || ['warn', 'Almacenamiento desconocido'];
     const images = {
-      blob: ['ok', 'Fotos en Vercel Blob'],
+      blob: ['ok', 'Fotos conectadas'],
       archivos: ['ok', 'Fotos en archivos locales']
-    }[s.images] || ['warn', 'Fotos dentro del producto: conectá Vercel Blob (Storage)'];
-    const emails = s.emails ? ['ok', 'Emails a clientes activos'] : ['warn', 'Emails sin configurar: cargá SMTP_USER y SMTP_PASSWORD en Vercel'];
+    }[s.images] || ['warn', 'Fotos sin almacenamiento'];
+    const emails = s.emails ? ['ok', 'Emails activos'] : ['warn', 'Emails sin configurar'];
     statusEl.innerHTML = [storage, images, emails].map(([kind, text]) => `<span class="system-pill system-${kind}">${text}</span>`).join('');
   }
 }
@@ -263,10 +263,10 @@ function renderOrdersTable() {
         <td colspan="7" style="text-align: center; padding: 4rem 1.5rem;">
           <div style="max-width: 420px; margin: 0 auto; text-align: center;">
             <div style="font-size: 0.95rem; font-weight: 600; color: var(--admin-text-primary); margin-bottom: 0.35rem;">
-              ${isFiltered ? 'No se encontraron pedidos con esos filtros' : 'No hay órdenes pendientes en taller ni despachos activos'}
+              ${isFiltered ? 'Sin pedidos con esos filtros' : 'Todavía no hay pedidos'}
             </div>
             <p style="font-size: 0.8rem; color: var(--admin-text-secondary); line-height: 1.5; margin: 0;">
-              ${isFiltered ? 'Probá restableciendo los filtros o el buscador para ver todas las órdenes.' : 'La bandeja se actualizará en tiempo real a medida que los clientes adquieran joyas en la tienda.'}
+              ${isFiltered ? 'Probá con otros filtros.' : 'Acá vas a ver las compras de la tienda.'}
             </p>
           </div>
         </td>
@@ -282,7 +282,7 @@ function renderOrdersTable() {
     const itemsSummary = order.items.map(it => `${it.quantity}x ${it.name} (${it.size})`).join('<br>');
 
     let actionButtons = `
-      <button class="btn-op-action" onclick="openOrderDetailModal('${order.id}')" title="Ver Remito y Contacto">
+      <button class="btn-op-action" onclick="openOrderDetailModal('${order.id}')" title="Ver detalle">
         ${window.ICONS.eye}
         <span>Detalle</span>
       </button>
@@ -291,7 +291,7 @@ function renderOrdersTable() {
     const waUrl = whatsappUrl(order);
     if (waUrl) {
       actionButtons += `
-        <a class="btn-op-action" href="${waUrl}" target="_blank" rel="noopener" title="Abrir WhatsApp con el mensaje armado">
+        <a class="btn-op-action" href="${waUrl}" target="_blank" rel="noopener" title="Escribir por WhatsApp">
           <span>WhatsApp</span>
         </a>
       `;
@@ -299,16 +299,16 @@ function renderOrdersTable() {
 
     if (order.payment_status === 'pending_verification') {
       actionButtons += `
-        <button class="btn-op-action btn-op-success" onclick="quickApproveTransfer('${order.id}')" title="Validar CBU">
+        <button class="btn-op-action btn-op-success" onclick="quickApproveTransfer('${order.id}')" title="Confirmar que llegó la transferencia">
           ${window.ICONS.check}
-          <span>Validar CBU</span>
+          <span>Acreditar</span>
         </button>
       `;
     }
 
     if (order.payment_status === 'approved' && order.shipping_status === 'in_workshop') {
       actionButtons += `
-        <button class="btn-op-action" onclick="openDispatchModal('${order.id}')" title="Asignar Guía Andreani">
+        <button class="btn-op-action" onclick="openDispatchModal('${order.id}')" title="Cargar guía y despachar">
           ${window.ICONS.shipping}
           <span>Despachar</span>
         </button>
@@ -317,7 +317,7 @@ function renderOrdersTable() {
 
     if (order.shipping_status === 'in_transit') {
       actionButtons += `
-        <button class="btn-op-action" onclick="markAsDelivered('${order.id}')" title="Marcar Entregado">
+        <button class="btn-op-action" onclick="markAsDelivered('${order.id}')" title="Marcar como entregado">
           ${window.ICONS.check}
           <span>Entregado</span>
         </button>
@@ -361,7 +361,7 @@ function renderOrdersTable() {
 }
 
 async function quickApproveTransfer(orderId) {
-  if (!confirm(`¿Confirmás la acreditación bancaria para el pedido ${orderId}?`)) return;
+  if (!confirm(`¿Llegó la transferencia del pedido ${orderId}?`)) return;
   try {
     const res = await fetch(`/api/admin/orders/${orderId}/status`, {
       method: 'PUT',
@@ -373,17 +373,17 @@ async function quickApproveTransfer(orderId) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Pedido ${orderId} acreditado. Derivado a taller.${emailNote(result)}`);
+      showToast(`Pedido ${orderId}: pago confirmado.${emailNote(result)}`);
       await fetchStats();
       await fetchOrders();
     }
   } catch (err) {
-    showToast('Error al confirmar cobro');
+    showToast('No se pudo confirmar el pago');
   }
 }
 
 function emailNote(result) {
-  return result && result.emailed && result.emailed.length ? ' Se avisó al cliente por email.' : '';
+  return result && result.emailed && result.emailed.length ? ' Cliente avisado por email.' : '';
 }
 
 // --- WHATSAPP A UN CLIC ---
@@ -414,7 +414,7 @@ function whatsappUrl(order) {
 }
 
 function openDispatchModal(orderId) {
-  const tracking = prompt(`Ingresá el número de envío de Andreani para ${orderId}:`, '');
+  const tracking = prompt(`Número de envío de Andreani (${orderId}):`, '');
   if (tracking && tracking.trim()) {
     dispatchOrder(orderId, tracking.trim());
   }
@@ -454,7 +454,7 @@ async function markAsDelivered(orderId) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Pedido ${orderId} marcado como entregado.${emailNote(result)}`);
+      showToast(`Pedido ${orderId} entregado.${emailNote(result)}`);
       await fetchStats();
       await fetchOrders();
     }
@@ -479,7 +479,7 @@ function openOrderDetailModal(orderId) {
       <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
       <div class="admin-order-head">
         <div>
-          <span style="font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-dark); font-weight: 600;">Remito de Orfebrería</span>
+          <span style="font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-dark); font-weight: 600;">Pedido</span>
           <h2 class="serif-font" style="font-size: 2.2rem; color: var(--text-primary); margin: 0.2rem 0;">Pedido ${order.id}</h2>
           <div style="font-size: 0.8rem; color: var(--text-muted);">${order.date}</div>
         </div>
@@ -491,15 +491,15 @@ function openOrderDetailModal(orderId) {
 
       <div class="client-contact-card">
         <div>
-          <strong style="color: var(--gold-dark); text-transform: uppercase; font-size: 0.72rem;">Datos del Comprador</strong>
+          <strong style="color: var(--gold-dark); text-transform: uppercase; font-size: 0.72rem;">Cliente</strong>
           <div><strong>Nombre:</strong> ${order.customer.name}</div>
-          <div><strong>DNI / CUIL:</strong> ${order.customer.dni}</div>
+          <div><strong>DNI:</strong> ${order.customer.dni}</div>
           <div><strong>Teléfono:</strong> ${order.customer.phone}</div>
           <div><strong>Email:</strong> ${order.customer.email || '-'}</div>
-          ${waUrl ? `<a href="${waUrl}" target="_blank" rel="noopener" class="whatsapp-link-btn">Contactar por WhatsApp</a>` : ''}
+          ${waUrl ? `<a href="${waUrl}" target="_blank" rel="noopener" class="whatsapp-link-btn">WhatsApp</a>` : ''}
         </div>
         <div>
-          <strong style="color: var(--gold-dark); text-transform: uppercase; font-size: 0.72rem;">Destino de Envío</strong>
+          <strong style="color: var(--gold-dark); text-transform: uppercase; font-size: 0.72rem;">Envío</strong>
           <div><strong>Dirección:</strong> ${order.customer.address}</div>
           <div><strong>Provincia:</strong> ${order.customer.province}</div>
           <div><strong>Transporte:</strong> ${order.shipping_carrier}</div>
@@ -516,14 +516,14 @@ function openOrderDetailModal(orderId) {
       ` : ''}
 
       <div style="margin-bottom: 1.8rem;">
-        <h4 style="font-size: 0.82rem; text-transform: uppercase; margin-bottom: 0.8rem;">Piezas en Taller</h4>
+        <h4 style="font-size: 0.82rem; text-transform: uppercase; margin-bottom: 0.8rem;">Joyas</h4>
         <div style="display: flex; flex-direction: column; gap: 0.8rem;">
           ${order.items.map(it => `
             <div style="display: grid; grid-template-columns: 65px 1fr auto; gap: 1rem; align-items: center; padding: 0.8rem; background-color: var(--bg-main); border: 1px solid var(--border-light);">
               <img src="${it.image}" alt="${it.name}" style="width: 65px; height: 65px; object-fit: cover;">
               <div>
                 <strong>${it.name}</strong>
-                <div style="font-size: 0.75rem; color: var(--gold-dark); font-weight: 600;">Medida Solicitada: ${it.size}</div>
+                <div style="font-size: 0.75rem; color: var(--gold-dark); font-weight: 600;">Talle: ${it.size}</div>
                 <div style="font-size: 0.72rem; color: var(--text-muted);">${it.metal}</div>
               </div>
               <div style="text-align: right; font-weight: 600;">${formatARS(it.price * it.quantity)}</div>
@@ -533,7 +533,7 @@ function openOrderDetailModal(orderId) {
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <button class="btn-luxury-outline" onclick="window.print()">Imprimir Remito Oficial</button>
+        <button class="btn-luxury-outline" onclick="window.print()">Imprimir</button>
       </div>
     </div>
   `;
@@ -661,7 +661,7 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
 
   async function processSelectedFile(file) {
     if (!file.type.startsWith('image/')) {
-      showToast('Por favor seleccioná una imagen válida (JPG, PNG, WebP)');
+      showToast('Elegí una imagen JPG, PNG o WebP');
       return;
     }
 
@@ -687,7 +687,7 @@ function bindUploadZone(zoneId, fileInputId, urlInputId, previewImgId, statusId)
       if (statusEl) {
         statusEl.innerHTML = `<span style="color: #962332; font-weight: 600;">Error al guardar: ${err.message}</span>`;
       }
-      showToast('Error al procesar la foto');
+      showToast('No se pudo subir la foto');
     }
   }
 }
@@ -744,7 +744,7 @@ function renderCatalogTable() {
   }
 
   if (counterEl) {
-    counterEl.textContent = `${prods.length} ${prods.length === 1 ? 'joya' : 'joyas'} en catálogo`;
+    counterEl.textContent = `${prods.length} ${prods.length === 1 ? 'joya' : 'joyas'}`;
   }
 
   if (prods.length === 0) {
@@ -762,7 +762,7 @@ function renderCatalogTable() {
     <tr>
       <td class="cell-head">
         <div style="display: flex; align-items: center; gap: 1rem;">
-          <div style="position: relative; cursor: pointer;" onclick="openEditProductModal('${prod.id}')" title="Hacé clic para cambiar fotos o editar">
+          <div style="position: relative; cursor: pointer;" onclick="openEditProductModal('${prod.id}')" title="Editar">
             <img src="${prod.primary_image}" alt="${prod.name}" class="product-thumb-preview">
             ${prod.secondary_image ? `<span style="position: absolute; bottom: -3px; right: -3px; background: #3A1822; color: #FFF; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 9999px; font-weight: 700;">+1</span>` : ''}
           </div>
@@ -784,7 +784,7 @@ function renderCatalogTable() {
       <td data-label="Precio">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <input type="number" id="price-input-${prod.id}" value="${prod.price}" class="form-input" style="width: 125px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
-          <button class="btn-op-action" onclick="saveProductPrice('${prod.id}')" title="Guardar Precio">Guardar</button>
+          <button class="btn-op-action" onclick="saveProductPrice('${prod.id}')" title="Guardar precio">Guardar</button>
         </div>
       </td>
       <td data-label="Stock">
@@ -799,15 +799,11 @@ function renderCatalogTable() {
       </td>
       <td class="cell-actions" style="text-align: right;">
         <div class="table-action-btns" style="justify-content: flex-end;">
-          <button class="btn-op-action btn-op-photo" onclick="openEditProductModal('${prod.id}')" title="Cambiar Fotos y Datos">
-            ${window.ICONS.image || ''}
-            <span>Cambiar Fotos</span>
-          </button>
-          <button class="btn-op-action" onclick="openEditProductModal('${prod.id}')" title="Editar Detalles">
+          <button class="btn-op-action" onclick="openEditProductModal('${prod.id}')" title="Editar">
             ${window.ICONS.edit || ''}
             <span>Editar</span>
           </button>
-          <button class="btn-op-action btn-op-danger" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\\'")}')" title="Eliminar del Catálogo">
+          <button class="btn-op-action btn-op-danger" onclick="deleteProduct('${prod.id}', '${(prod.name || '').replace(/'/g, "\\'")}')" title="Eliminar">
             ${window.ICONS.trash || ''}
           </button>
         </div>
@@ -877,7 +873,7 @@ async function toggleProductStock(id, inStock) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(inStock ? 'Pieza marcada En Stock' : 'Pieza marcada Agotada');
+      showToast(inStock ? 'Marcada en stock' : 'Marcada agotada');
       fetchCatalog();
     }
   } catch (e) {
@@ -1028,7 +1024,7 @@ async function handleCreateProductSubmit(e) {
   const description = document.getElementById('new-prod-desc').value.trim();
 
   if (!name || price <= 0 || !primary_image) {
-    showToast('Por favor completá el nombre, precio y foto principal');
+    showToast('Faltan nombre, precio o foto principal');
     return;
   }
 
@@ -1043,7 +1039,7 @@ async function handleCreateProductSubmit(e) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Joya '${name}' incorporada al catálogo`);
+      showToast(`"${name}" agregada`);
       closeAdminModal();
       fetchCatalog();
       fetchCatalogOptions();
@@ -1084,7 +1080,7 @@ function openEditProductModal(productId) {
 
         <label class="product-check">
           <input type="checkbox" id="edit-prod-stock" ${prod.in_stock ? 'checked' : ''}>
-          <span>Disponible para la venta <small>(solo cuenta si no cargás unidades de stock)</small></span>
+          <span>Disponible para la venta <small>(si no cargás stock)</small></span>
         </label>
 
         <div class="product-section-title">Fotos</div>
@@ -1156,7 +1152,7 @@ async function handleEditProductSubmit(e, productId) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Joya '${name}' actualizada con éxito`);
+      showToast('Cambios guardados');
       closeAdminModal();
       fetchCatalog();
       fetchCatalogOptions();
@@ -1164,13 +1160,13 @@ async function handleEditProductSubmit(e, productId) {
       showToast(result.error || 'Error al actualizar la joya');
     }
   } catch (err) {
-    showToast('Error de conexión al guardar cambios');
+    showToast('Sin conexión, probá de nuevo');
   }
 }
 
 // --- ELIMINAR JOYA DEL CATÁLOGO ---
 async function deleteProduct(productId, jewelName) {
-  if (!confirm(`¿Estás seguro/a de que querés eliminar la joya "${jewelName}" del catálogo de GALILEA Atelier? Esta acción no se puede deshacer.`)) {
+  if (!confirm(`¿Eliminar "${jewelName}"? No se puede deshacer.`)) {
     return;
   }
 
@@ -1183,7 +1179,7 @@ async function deleteProduct(productId, jewelName) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast(`Joya "${jewelName}" eliminada del catálogo`);
+      showToast(`"${jewelName}" eliminada`);
       closeAdminModal();
       fetchCatalog();
     } else {
@@ -1217,7 +1213,7 @@ function renderCatalogCategoryFilter() {
   const select = document.getElementById('catalog-category-filter');
   if (!select) return;
   const current = AdminState.catalogCategory || 'todos';
-  select.innerHTML = `<option value="todos">Todas las categorías</option>` +
+  select.innerHTML = `<option value="todos">Todas</option>` +
     AdminState.options.categories.map(c => `<option value="${c.id}" ${c.id === current ? 'selected' : ''}>${c.label}</option>`).join('');
 }
 
@@ -1243,7 +1239,7 @@ function openOptionsModal() {
     <div class="admin-modal-card" style="max-width: 760px;">
       <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
       <h2 class="admin-modal-title">Categorías y materiales</h2>
-      <p class="admin-modal-subtitle">Son las opciones que aparecen al dar de alta o editar una joya y en los filtros de la tienda. Las que tienen joyas asignadas no se pueden quitar.</p>
+      <p class="admin-modal-subtitle">Las que tienen joyas no se pueden quitar.</p>
 
       <div class="options-manager-grid">
         <div class="options-manager-col">
@@ -1335,7 +1331,7 @@ async function saveCatalogOptions() {
     });
     const result = await res.json();
     if (result.success) {
-      showToast('Categorías y materiales actualizados');
+      showToast('Opciones guardadas');
       closeAdminModal();
       await fetchCatalogOptions();
     } else {
@@ -1398,13 +1394,13 @@ function setupSettingsForm() {
         });
         const result = await res.json();
         if (result.success) {
-          showToast('Textos y ofertas actualizados en la tienda');
+          showToast('Cambios guardados');
           fetchSettings();
         } else {
           showToast(result.error || 'Error guardando ajustes');
         }
       } catch (err) {
-        showToast('Error al conectar con la API');
+        showToast('Sin conexión, probá de nuevo');
       }
     });
   }
@@ -1471,7 +1467,7 @@ function setupUserCreationForm() {
         });
         const result = await res.json();
         if (result.success) {
-          showToast(`Cuenta para ${name} creada exitosamente`);
+          showToast(`Cuenta de ${name} creada`);
           form.reset();
           fetchTeam();
         } else {
@@ -1572,5 +1568,4 @@ window.handleCreateProductSubmit = handleCreateProductSubmit;
 window.openEditProductModal = openEditProductModal;
 window.handleEditProductSubmit = handleEditProductSubmit;
 window.deleteProduct = deleteProduct;
-window.toggleUploadTab = toggleUploadTab;
 

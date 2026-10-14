@@ -142,8 +142,8 @@ def create_transfer_order(data, products, discount_pct, put_order):
     order = _new_order(order_id, _customer(data.get("payer") or data), lines, final,
         payment_method="bank_transfer", payment_method_label=f"Transferencia ({pct:g}% OFF)",
         installments=1, installment_amount=final,
-        payment_status="pending_verification", payment_status_label="Pendiente Acreditación CBU",
-        shipping_status="pending", shipping_status_label="Aguardando Cobro",
+        payment_status="pending_verification", payment_status_label="Transferencia pendiente",
+        shipping_status="pending", shipping_status_label="Esperando transferencia",
         notes=f"Total regular: ${total:,.2f} ARS. Descuento aplicado: {pct:g}%.")
     put_order(order)
     response = {"success": True, "order_id": order_id, "original_amount": total,
@@ -178,9 +178,9 @@ def apply_payment(pay, get_order, put_order, on_approved=None):
     if pay.get("installments"): order["installments"] = pay["installments"]
     if pay.get("payment_method_id"): order["payment_method_label"] = f"Mercado Pago ({pay['payment_method_id']})"
     if status == "approved" and order.get("shipping_status") == "awaiting_payment":
-        order.update(shipping_status="in_workshop", shipping_status_label="En taller (preparación)")
+        order.update(shipping_status="in_workshop", shipping_status_label="En taller")
     if status == "approved" and not was_approved:
-        add_history(order, "Pago aprobado: en preparación en el taller")
+        add_history(order, "Pago aprobado, en preparación")
         if on_approved: on_approved(order)
     put_order(order)
     return order

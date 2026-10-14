@@ -372,11 +372,11 @@ function renderProducts() {
           <div class="card-overlay-actions">
             <button class="btn-card-action btn-quick-view" data-id="${product.id}">
               ${window.ICONS.eye}
-              <span>Vista Rápida</span>
+              <span>Ver</span>
             </button>
             <button class="btn-card-action btn-quick-add" data-id="${product.id}" ${product.in_stock === false ? 'disabled' : ''}>
               ${window.ICONS.bag}
-              <span>${product.in_stock === false ? 'Agotado' : 'Añadir'}</span>
+              <span>${product.in_stock === false ? 'Agotado' : 'Agregar'}</span>
             </button>
           </div>
         </div>
@@ -452,8 +452,8 @@ function openQuickView(product) {
     sizesHtml = `
       <div style="margin-top: 0.5rem;">
         <div class="size-selector-label">
-          <span>Seleccionar Medida / Talle:</span>
-          <span class="size-guide-link">${window.ICONS.ruler} Guía Oficial de Talles</span>
+          <span>Talle:</span>
+          <span class="size-guide-link">${window.ICONS.ruler} Guía de talles</span>
         </div>
         <div class="size-options">
           ${product.sizes.map((sz, idx) => `
@@ -494,12 +494,12 @@ function openQuickView(product) {
             ? `<div class="stock-hint">${product.stock === 1 ? '¡Última unidad!' : `Últimas ${product.stock} unidades`}</div>` : ''}
           <button class="btn-luxury" style="width: 100%; margin-top: 0.8rem;" id="btn-modal-add-cart" ${product.in_stock === false ? 'disabled' : ''}>
             ${window.ICONS.bag}
-            <span>${product.in_stock === false ? 'Agotado' : 'Añadir a la Bolsa de Compras'}</span>
+            <span>${product.in_stock === false ? 'Agotado' : 'Agregar a la bolsa'}</span>
           </button>
         </div>
 
         <div style="margin-top: 0.5rem;">
-          <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-dark); font-weight: 600;">Detalles de Orfebrería</span>
+          <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-dark); font-weight: 600;">Detalles</span>
           ${specsHtml}
         </div>
       </div>
@@ -668,7 +668,7 @@ function updateCartUI() {
 
   if (subtotalEl) subtotalEl.textContent = formatARS(subtotal);
   if (totalEl) totalEl.textContent = formatARS(subtotal);
-  if (cuotasEl) cuotasEl.textContent = `Hasta 3 cuotas sin interés de ${formatARS(cuota3)} con Visa, Mastercard y Amex`;
+  if (cuotasEl) cuotasEl.textContent = `3 cuotas sin interés de ${formatARS(cuota3)}`;
 }
 
 function openCartDrawer() {
@@ -695,7 +695,7 @@ function closeCartDrawer() {
 
 function openCheckoutModal() {
   if (AppState.cart.length === 0) {
-    showToast('Añadí al menos una pieza a la bolsa para pagar');
+    showToast('Tu bolsa está vacía');
     return;
   }
 
@@ -711,8 +711,8 @@ function openCheckoutModal() {
     <div class="checkout-modal-card" id="checkout-card-container">
       <div class="checkout-header">
         <div>
-          <h2 class="checkout-title">Finalizar Adquisición</h2>
-          <span class="checkout-subtitle">Checkout Seguro · Envíos Asegurados a Toda la República Argentina</span>
+          <h2 class="checkout-title">Finalizar compra</h2>
+          <span class="checkout-subtitle">Envío asegurado a todo el país</span>
         </div>
         <button class="btn-close-modal" id="btn-close-checkout">${window.ICONS.close}</button>
       </div>
@@ -722,34 +722,34 @@ function openCheckoutModal() {
         <div>
           <h3 class="checkout-section-title">
             ${window.ICONS.shipping}
-            <span>1. Datos de Entrega & Facturación</span>
+            <span>1. Tus datos</span>
           </h3>
 
           <form id="checkout-shipping-form" onsubmit="event.preventDefault()">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Nombre y Apellido</label>
+                <label class="form-label">Nombre y apellido</label>
                 <input type="text" id="chk-name" class="form-input" placeholder="Ej. Camila Navarro" required>
               </div>
               <div class="form-group">
-                <label class="form-label">DNI / CUIL (Requerido p/ Facturación)</label>
+                <label class="form-label">DNI</label>
                 <input type="text" id="chk-dni" class="form-input" placeholder="Ej. 34.890.123" required>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Correo Electrónico</label>
+                <label class="form-label">Email</label>
                 <input type="email" id="chk-email" class="form-input" placeholder="nombre@ejemplo.com" required>
               </div>
               <div class="form-group">
-                <label class="form-label">Teléfono / WhatsApp</label>
+                <label class="form-label">Teléfono</label>
                 <input type="tel" id="chk-phone" class="form-input" placeholder="Ej. 11 2345-6789" required>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Dirección de Entrega</label>
+              <label class="form-label">Dirección</label>
               <input type="text" id="chk-address" class="form-input" placeholder="Calle y Altura, Piso / Depto" required>
             </div>
 
@@ -770,7 +770,7 @@ function openCheckoutModal() {
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label">Código Postal (CP)</label>
+                <label class="form-label">Código postal</label>
                 <input type="text" id="chk-zip" class="form-input" placeholder="Ej. C1014AAD" required>
               </div>
             </div>
@@ -779,7 +779,7 @@ function openCheckoutModal() {
           <!-- Resumen de items -->
           <div class="order-summary-box" style="margin-top: 1.5rem;">
             <div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-dark); font-weight: 600; margin-bottom: 0.8rem;">
-              Piezas en tu pedido (${AppState.cart.length})
+              Tu pedido (${AppState.cart.length})
             </div>
             <div class="order-items-mini">
               ${AppState.cart.map(it => `
@@ -790,8 +790,8 @@ function openCheckoutModal() {
               `).join('')}
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-top: 0.5rem;">
-              <span>Envío Asegurado Andreani / Correo:</span>
-              <span style="color: var(--status-success); font-weight: 600;">Bonificado (Gratis)</span>
+              <span>Envío:</span>
+              <span style="color: var(--status-success); font-weight: 600;">Gratis</span>
             </div>
           </div>
         </div>
@@ -800,7 +800,7 @@ function openCheckoutModal() {
         <div>
           <h3 class="checkout-section-title">
             ${window.ICONS.creditCard}
-            <span>2. Selección de Medio de Pago</span>
+            <span>2. Pago</span>
           </h3>
 
           <div class="payment-tabs">
@@ -822,7 +822,7 @@ function openCheckoutModal() {
           <!-- PANEL 1: MERCADO PAGO -->
           <div class="payment-panel ${AppState.activePaymentTab === 'mercadopago' ? 'active' : ''}" id="panel-mercadopago">
             <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.6;">
-              Pagá a través de la pasarela líder de Argentina. Podés utilizar dinero en cuenta de Mercado Pago o tarjetas de débito/crédito con hasta 6 cuotas bancarias.
+              Con dinero en cuenta o tarjeta, hasta 6 cuotas.
             </p>
             <div class="card-brands-row">
               ${window.ICONS.badgeVisa}
@@ -832,7 +832,7 @@ function openCheckoutModal() {
             </div>
             <div style="background-color: var(--bg-surface); padding: 1rem; border-radius: var(--radius-xs); border: 1px solid var(--border-light); margin-bottom: 1.2rem; font-size: 0.8rem;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
-                <span>Total de la Orden:</span>
+                <span>Total:</span>
                 <span style="font-weight: 700;">${formatARS(subtotal)}</span>
               </div>
               <div style="color: var(--status-success); font-size: 0.75rem;">
@@ -853,11 +853,11 @@ function openCheckoutModal() {
               ${window.ICONS.badgeAmex}
             </div>
             <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.6;">
-              Pagá con tarjeta de crédito o débito en el entorno seguro de Mercado Pago, sin necesidad de tener cuenta. Elegís las cuotas (hasta 6) en el paso siguiente.
+              Crédito o débito, sin cuenta de Mercado Pago. Las cuotas se eligen en el paso siguiente.
             </p>
             <div style="background-color: var(--bg-surface); padding: 1rem; border-radius: var(--radius-xs); border: 1px solid var(--border-light); margin-bottom: 1.2rem; font-size: 0.8rem;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
-                <span>Total de la Orden:</span>
+                <span>Total:</span>
                 <span style="font-weight: 700;">${formatARS(subtotal)}</span>
               </div>
               <div style="color: var(--status-success); font-size: 0.75rem;">
@@ -874,19 +874,19 @@ function openCheckoutModal() {
           <div class="payment-panel ${AppState.activePaymentTab === 'transfer' ? 'active' : ''}" id="panel-transfer">
             <div style="background-color: var(--gold-tint); border: 1px solid var(--gold-light); padding: 0.9rem; border-radius: var(--radius-xs); margin-bottom: 1.2rem;">
               <div style="font-size: 0.8rem; font-weight: 600; color: var(--gold-dark); margin-bottom: 0.2rem;">
-                Beneficio Exclusivo: ${discountPct}% de Descuento Inmediato
+                ${discountPct}% de descuento
               </div>
               <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                Subtotal regular: <s>${formatARS(subtotal)}</s><br>
-                <strong style="color: var(--text-primary); font-size: 0.9rem;">Total Bonificado: ${formatARS(transferTotal)}</strong>
+                Antes: <s>${formatARS(subtotal)}</s><br>
+                <strong style="color: var(--text-primary); font-size: 0.9rem;">Total: ${formatARS(transferTotal)}</strong>
               </div>
             </div>
             <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.2rem;">
-              Al confirmar, te brindamos los datos de CBU/Alias de nuestra cuenta bancaria en Santander / Galicia y reservamos tus joyas por 24 hs.
+              Te damos los datos para transferir y reservamos tu pedido 24 h.
             </p>
             <button class="btn-luxury" style="width: 100%;" id="btn-pay-transfer">
               ${window.ICONS.check}
-              <span>Generar Orden con ${discountPct}% OFF (${formatARS(transferTotal)})</span>
+              <span>Reservar con ${discountPct}% OFF</span>
             </button>
           </div>
 
@@ -894,11 +894,11 @@ function openCheckoutModal() {
           <div class="trust-badges-bar">
             <div class="trust-badge-item">
               ${window.ICONS.shield}
-              <span>Certificado 18K / 925</span>
+              <span>Calidad garantizada</span>
             </div>
             <div class="trust-badge-item">
               ${window.ICONS.lock}
-              <span>Cifrado SSL 256-bit</span>
+              <span>Pago seguro</span>
             </div>
             <div class="trust-badge-item">
               ${window.ICONS.shipping}
@@ -1083,7 +1083,7 @@ function renderPaymentSuccess(data) {
     detailsHtml = `
       <div class="bank-transfer-box">
         <div style="font-weight: 700; font-size: 0.9rem; color: var(--gold-dark); margin-bottom: 0.8rem; text-align: center;">
-          Datos Bancarios para Transferir (${formatARS(data.final_amount)})
+          Transferí ${formatARS(data.final_amount)} a:
         </div>
         <div class="bank-transfer-row">
           <span>Banco:</span>
@@ -1121,23 +1121,22 @@ function renderPaymentSuccess(data) {
       </div>
 
       <span style="font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-dark); font-weight: 600;">
-        Operación Confirmada
+        Listo
       </span>
 
       <h2 class="serif-font" style="font-size: 2.4rem; color: var(--text-primary); margin: -0.5rem 0 0.5rem;">
-        ¡Gracias por elegir GALILEA Atelier!
+        ¡Gracias por tu compra!
       </h2>
 
       <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 520px; line-height: 1.6;">
-        Tu orden ha sido registrada con el código <strong style="color: var(--text-primary);">${data.order_id}</strong>.
-        Guardalo: es la referencia de tu compra para cualquier consulta con el atelier.
+        Tu código de pedido es <strong style="color: var(--text-primary);">${data.order_id}</strong>. Guardalo para seguir tu pedido.
       </p>
 
       ${detailsHtml}
 
       <div style="display: flex; gap: 1rem; margin-top: 1rem;">
         <button class="btn-luxury" onclick="closeCheckoutModal()">
-          <span>Volver a la Tienda</span>
+          <span>Volver a la tienda</span>
         </button>
       </div>
     </div>
@@ -1216,7 +1215,7 @@ async function handleCheckoutReturn() {
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
           ${paid || inProgress
             ? `<button class="btn-luxury" onclick="openTrackingModal('${orderId.replace(/[^A-Za-z0-9-]/g, '')}')"><span>Seguí tu pedido</span></button>
-               <button class="btn-luxury-outline" onclick="closeCheckoutModal()"><span>Volver a la Tienda</span></button>`
+               <button class="btn-luxury-outline" onclick="closeCheckoutModal()"><span>Volver a la tienda</span></button>`
             : `<button class="btn-luxury" onclick="closeCheckoutModal(); openCartDrawer();"><span>Volver a mi Bolsa</span></button>`}
         </div>
       </div>
