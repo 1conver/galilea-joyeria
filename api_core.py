@@ -126,8 +126,8 @@ def get_categories(req):
 def get_settings(req):
     return ok(settings=public_settings(load_settings()))
 
-def image_storage():
-    if uploads.blob_token():
+def image_storage(req):
+    if uploads.blob_auth(req.headers.get("x-vercel-oidc-token", ""))[0]:
         return "blob"
     return "dentro del producto" if os.environ.get("VERCEL") else "archivos"
 
@@ -139,7 +139,7 @@ def health(req):
     except Exception as e:
         print("Health: la base no responde:", e)
         storage_ok = False
-    return ok(storage=store.kind, storage_ok=storage_ok, images=image_storage(),
+    return ok(storage=store.kind, storage_ok=storage_ok, images=image_storage(req),
               emails=notify.configured(), mercadopago=bool(payments.token()))
 
 
@@ -290,7 +290,7 @@ def admin_stats(req):
         "in_transit": count("shipping_status", "in_transit"),
         "delivered": count("shipping_status", "delivered"),
         "storage": get_store().kind,
-        "images": image_storage(),
+        "images": image_storage(req),
         "emails": notify.configured()})
 
 
@@ -326,7 +326,7 @@ def admin_delete_product(req):
 def admin_upload(req):
     req.require("admin")
     data = uploads.decode_base64(req.body.get("data") or req.body.get("image") or "")
-    url, warning = uploads.save_image(data, UPLOADS_DIR)
+    url, warning = uploads.save_image(data, UPLOADS_DIR, req.headers.get("x-vercel-oidc-token", ""))
     return ok(url=url, warning=warning, filename=req.body.get("filename", "joya.jpg"))
 
 def admin_settings(req):
