@@ -92,10 +92,21 @@ def clean_contact(data):
         out["instagram_url"] = url.rstrip("/")
     return out
 
+def clean_hero_image(data):
+    """Foto de portada del panel: una foto subida o un link. Vacío = la foto de siempre."""
+    if "hero_image" not in data:
+        return {}
+    url = str(data["hero_image"] or "").strip()
+    if url and not uploads.safe_image_url(url):
+        raise ValueError("La foto de portada tiene que ser una foto subida o un link https://")
+    return {"hero_image": url}
+
 def public_settings(settings):
     safe = {k: v for k, v in settings.items() if k not in SECRET_SETTINGS}
     for key, value in DEFAULT_CONTACT.items():
         safe[key] = safe.get(key) or value
+    safe["bank_details"] = payments.bank_details(settings)
+    safe["bank_configured"] = bool(settings.get("bank_details"))
     safe["mercadopago_configured"] = bool(payments.token())
     return safe
 
@@ -202,8 +213,9 @@ def confirm(req):
         raise ApiError(502, "No pudimos verificar el pago")
 
 def bank_transfer(req):
-    discount = load_settings().get("transfer_discount_pct", 15)
-    response, order = payments.create_transfer_order(req.body, load_products(), discount, get_store().put_order)
+    settings = load_settings()
+    response, order = payments.create_transfer_order(req.body, load_products(), settings.get("transfer_discount_pct", 15),
+                                                     get_store().put_order, payments.bank_details(settings))
     if notify.notify_order(order, "transfer_created"):
         get_store().put_order(order)
     return 200, response
@@ -237,6 +249,8 @@ def chat(req):
         if isinstance(result.get("reply"), str) and contact["whatsapp_number"] != DEFAULT_CONTACT["whatsapp_number"]:
             result["reply"] = (result["reply"].replace(DEFAULT_CONTACT["whatsapp_number"], contact["whatsapp_number"])
                                .replace(whatsapp_digits(DEFAULT_CONTACT["whatsapp_number"]), whatsapp_digits(contact["whatsapp_number"])))
+        if isinstance(result.get("reply"), str):  # y el alias de la cuenta cargada en el panel
+            result["reply"] = result["reply"].replace(payments.BANK_DETAILS["alias"], contact["bank_details"]["alias"])
         return 200, result
     return 200, {"success": True, "reply": "Bienvenido/a a <strong>GALILEA Atelier</strong>. ¿En qué pieza puedo orientarte hoy?",
                  "products": products[:2], "provider": "galilea-fallback"}
@@ -368,6 +382,9 @@ def admin_settings(req):
     settings = load_settings()
     catalog.apply_option_settings(settings, req.body)  # categorías y materiales
     settings.update(clean_contact(req.body))
+    settings.update(clean_hero_image(req.body))
+    if "bank_details" in req.body:
+        settings["bank_details"] = payments.clean_bank_details(req.body["bank_details"])
     for key in SETTINGS_KEYS:
         if key in req.body:
             settings[key] = req.body[key]

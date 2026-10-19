@@ -332,6 +332,44 @@
               <textarea id="set-hero-desc" class="form-input" rows="3" required></textarea>
             </div>
 
+            <!-- FOTO DE PORTADA (la grande del inicio de la tienda) -->
+            <div class="form-group" style="margin-bottom: 2rem;">
+              <div id="set-hero-photo"></div>
+              <button type="button" id="btn-hero-reset" class="photo-btn photo-btn-ghost" style="margin-top: 0.6rem; display: none;">Volver a la foto original</button>
+            </div>
+
+            <!-- CUENTA PARA TRANSFERENCIAS (la ve el cliente al pagar y le llega por email) -->
+            <div class="settings-block">
+              <h3 class="settings-block-title">Cuenta para transferencias</h3>
+              <p class="settings-block-desc" id="bank-status">Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Banco</label>
+                  <input type="text" id="set-bank-banco" class="form-input" placeholder="BBVA" maxlength="80">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo de cuenta</label>
+                  <input type="text" id="set-bank-tipo" class="form-input" placeholder="Caja de ahorro en pesos" maxlength="80">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Titular</label>
+                  <input type="text" id="set-bank-titular" class="form-input" placeholder="Nombre y apellido" maxlength="80">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CUIT o CUIL</label>
+                  <input type="text" id="set-bank-cuit" class="form-input" placeholder="20-12345678-9" inputmode="numeric" maxlength="13">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CBU o CVU</label>
+                  <input type="text" id="set-bank-cbu" class="form-input" placeholder="22 números" inputmode="numeric" maxlength="26">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Alias</label>
+                  <input type="text" id="set-bank-alias" class="form-input" placeholder="MI.ALIAS.BBVA" maxlength="20">
+                </div>
+              </div>
+            </div>
+
             <!-- CONTACTO Y REDES (los usan la tienda, el chat y los botones de WhatsApp/Instagram) -->
             <div class="settings-block">
               <h3 class="settings-block-title">Contacto y redes</h3>

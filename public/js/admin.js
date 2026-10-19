@@ -1348,6 +1348,32 @@ async function saveCatalogOptions() {
 // MÓDULO 3: OFERTAS & TEXTOS DE PORTADA (SOLO ADMIN)
 // =========================================================================
 
+const DEFAULT_HERO_IMAGE = 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=85';
+const BANK_INPUTS = [['banco', 'set-bank-banco'], ['tipo_cuenta', 'set-bank-tipo'], ['titular', 'set-bank-titular'],
+  ['cuit', 'set-bank-cuit'], ['cbu', 'set-bank-cbu'], ['alias', 'set-bank-alias']];
+
+// Foto de portada: misma ficha de foto que las joyas (subir, arrastrar o pegar link)
+function renderHeroPhoto(url) {
+  const box = document.getElementById('set-hero-photo');
+  if (!box) return;
+  box.innerHTML = photoField({
+    prefix: 'hero', inputId: 'set-hero-image', label: 'Foto de portada', url: url || DEFAULT_HERO_IMAGE,
+    status: url ? 'Foto elegida por vos' : 'Foto original de la tienda. Conviene una vertical (4:5).'
+  });
+  // texto y no url: el formulario valida y una foto subida es /uploads/... (lo revisa el servidor)
+  const input = document.getElementById('set-hero-image');
+  input.type = 'text';
+  // si no se cambió, se guarda vacío para seguir usando la original
+  if (!url) input.value = '';
+  bindUploadZone('hero-zone', 'hero-file', 'set-hero-image', 'hero-preview', 'hero-status');
+  const reset = document.getElementById('btn-hero-reset');
+  reset.style.display = url ? 'inline-flex' : 'none';
+  reset.onclick = () => {
+    renderHeroPhoto('');
+    showToast('Tocá Guardar para volver a la foto original');
+  };
+}
+
 async function fetchSettings() {
   try {
     const res = await fetch('/api/settings');
@@ -1362,6 +1388,13 @@ async function fetchSettings() {
       document.getElementById('set-hero-desc').value = s.hero_desc || '';
       document.getElementById('set-whatsapp').value = s.whatsapp_number || '';
       document.getElementById('set-instagram').value = s.instagram_url || '';
+      renderHeroPhoto(s.hero_image || '');
+      // Sin cuenta cargada, los campos quedan vacíos (la tienda muestra la cuenta de ejemplo)
+      const bank = s.bank_configured ? (s.bank_details || {}) : {};
+      BANK_INPUTS.forEach(([key, id]) => { document.getElementById(id).value = bank[key] || ''; });
+      document.getElementById('bank-status').innerHTML = s.bank_configured
+        ? 'Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email.'
+        : '<strong style="color: #962332;">Todavía no cargaste tu cuenta:</strong> la tienda está mostrando datos de ejemplo. Completala antes de vender por transferencia.';
     }
   } catch (e) {
     console.error(e);
@@ -1380,8 +1413,11 @@ function setupSettingsForm() {
         hero_title: document.getElementById('set-hero-title').value,
         hero_desc: document.getElementById('set-hero-desc').value,
         whatsapp_number: document.getElementById('set-whatsapp').value.trim(),
-        instagram_url: document.getElementById('set-instagram').value.trim()
+        instagram_url: document.getElementById('set-instagram').value.trim(),
+        hero_image: document.getElementById('set-hero-image').value.trim()
       };
+      const bank = Object.fromEntries(BANK_INPUTS.map(([key, id]) => [key, document.getElementById(id).value.trim()]));
+      if (Object.values(bank).some(Boolean)) payload.bank_details = bank;
 
       try {
         const res = await fetch('/api/admin/settings', {

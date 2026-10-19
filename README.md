@@ -32,6 +32,12 @@ Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http
 - **Seguí tu pedido**: el cliente pone código + email y ve el estado, el historial y el link de Andreani
   (también se abre desde `/?pedido=CODIGO`, el link que va en los emails). No hay cuentas de cliente.
 
+## Portada y cuenta para transferencias
+- La foto de portada se cambia en `/admin` → **Ajustes** (subir, arrastrar o pegar link; "Volver a la foto original").
+- La cuenta donde transfieren los clientes (banco, titular, CUIT/CUIL, CBU/CVU, alias) también va en **Ajustes**.
+  Mientras no se cargue, la tienda muestra la cuenta de ejemplo de `payments.py` y el panel lo avisa.
+  Cada pedido guarda la cuenta vigente al comprar, que es la que sale en su email.
+
 ## Contacto e Instagram
 - WhatsApp e Instagram se editan en `/admin` → **Ajustes** → Contacto y redes. Los usan los botones de la
   tienda (encabezado, pie, chat) y las respuestas del chat. Por defecto: +54 9 11 5419-7890 y @galileaacc.

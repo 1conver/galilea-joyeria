@@ -2,7 +2,7 @@
 Reglas: el precio SIEMPRE se calcula en el servidor; una orden solo pasa a
 'approved' cuando Mercado Pago lo confirma (webhook o retorno), consultando su API.
 Los pedidos se leen y guardan de a uno con get_order / put_order (ver store.py)."""
-import os, json, hmac, hashlib, time, uuid, urllib.request, urllib.error
+import os, re, json, hmac, hashlib, time, uuid, urllib.request, urllib.error
 from datetime import datetime, timezone, timedelta
 
 import catalog
@@ -20,7 +20,32 @@ BANK_DETAILS = {
     "alias": "GALILEA.JOYAS.ARG",
     "tipo_cuenta": "Cuenta Corriente Especial en Pesos"
 }
+BANK_FIELDS = tuple(BANK_DETAILS)  # se cargan desde el panel (Ajustes → Cuenta para transferencias)
 ARGENTINA = timezone(timedelta(hours=-3))
+
+def bank_details(settings):
+    """Cuenta donde transfieren los clientes: la del panel o, si no se cargó, la de ejemplo."""
+    saved = (settings or {}).get("bank_details") or {}
+    return {k: str(saved.get(k) or BANK_DETAILS[k]) for k in BANK_FIELDS}
+
+def clean_bank_details(data):
+    """Valida la cuenta que viene del panel. ValueError si algún dato no sirve."""
+    if not isinstance(data, dict):
+        raise ValueError("Datos de la cuenta inválidos")
+    b = {k: re.sub(r"\s+", " ", str(data.get(k) or "")).strip()[:80] for k in BANK_FIELDS}
+    if not b["banco"] or not b["titular"]:
+        raise ValueError("Completá el banco y el titular de la cuenta")
+    b["cbu"] = re.sub(r"\D", "", b["cbu"])
+    if len(b["cbu"]) != 22:
+        raise ValueError("El CBU o CVU tiene que tener 22 números")
+    b["alias"] = b["alias"].upper()
+    if not re.fullmatch(r"[A-Z0-9.-]{6,20}", b["alias"]):
+        raise ValueError("El alias tiene que tener entre 6 y 20 letras, números, puntos o guiones")
+    cuit = re.sub(r"\D", "", b["cuit"])
+    if len(cuit) != 11:
+        raise ValueError("El CUIT o CUIL tiene que tener 11 números")
+    b["cuit"] = f"{cuit[:2]}-{cuit[2:10]}-{cuit[10]}"
+    return b
 
 def now_ar():
     return datetime.now(ARGENTINA).strftime("%d/%m/%Y %H:%M")
@@ -131,7 +156,7 @@ def create_preference(data, products, put_order):
     return {"success": True, "mode": "live", "order_id": order_id, "total_ars": total,
             "preference_id": pref["id"], "init_point": pref["init_point"]}
 
-def create_transfer_order(data, products, discount_pct, put_order):
+def create_transfer_order(data, products, discount_pct, put_order, bank=None):
     """Orden por transferencia: total con descuento calculado en el servidor; queda
     'pending_verification' hasta que el admin confirme la acreditación.
     Devuelve (respuesta para la tienda, orden)."""
@@ -145,11 +170,13 @@ def create_transfer_order(data, products, discount_pct, put_order):
         payment_status="pending_verification", payment_status_label="Transferencia pendiente",
         shipping_status="pending", shipping_status_label="Esperando transferencia",
         notes=f"Total regular: ${total:,.2f} ARS. Descuento aplicado: {pct:g}%.")
+    bank = bank or dict(BANK_DETAILS)
+    order["bank_details"] = bank  # el email del pedido usa la cuenta vigente al comprar
     put_order(order)
     response = {"success": True, "order_id": order_id, "original_amount": total,
                 "discount_applied": f"{pct:g}% OFF por transferencia bancaria",
-                "final_amount": final, "currency": "ARS", "bank_details": BANK_DETAILS,
-                "instructions": (f"Transferí el importe de ${final:,.2f} ARS a nuestro Alias: {BANK_DETAILS['alias']}. "
+                "final_amount": final, "currency": "ARS", "bank_details": bank,
+                "instructions": (f"Transferí el importe de ${final:,.2f} ARS a nuestro Alias: {bank['alias']}. "
                                  f"Referencia: {order_id}.")}
     return response, order
 

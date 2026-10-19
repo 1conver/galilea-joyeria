@@ -72,7 +72,7 @@ def build(order, event):
         intro = "Recibimos tu pago. Ya estamos preparando tu pieza en el taller."
         extra_text, extra_html = "", ""
     elif event == "transfer_created":
-        b = payments.BANK_DETAILS
+        b = order.get("bank_details") or payments.BANK_DETAILS
         subject = f"Recibimos tu pedido {oid}: datos para transferir"
         intro = f"Reservamos tu pedido. Para confirmarlo, transferí {total} y respondé este email con el comprobante."
         extra_text = (f"\nAlias: {b['alias']}\nCBU: {b['cbu']}\nTitular: {b['titular']}\nCUIT: {b['cuit']}\n"

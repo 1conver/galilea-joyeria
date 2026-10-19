@@ -17,7 +17,8 @@ const AppState = {
   selectedSize: null,
   activePaymentTab: 'mercadopago',
   appliedPromo: null,
-  transferDiscountPct: 15
+  transferDiscountPct: 15,
+  bankAlias: 'GALILEA.JOYAS.ARG'
 };
 
 // Formateador de moneda para Argentina (ARS)
@@ -113,6 +114,9 @@ async function fetchStoreSettings() {
       if (heroTag && s.hero_tag) heroTag.textContent = s.hero_tag;
       if (heroTitle && s.hero_title) heroTitle.innerHTML = s.hero_title.includes('<em>') ? s.hero_title : s.hero_title;
       if (heroDesc && s.hero_desc) heroDesc.textContent = s.hero_desc;
+      const heroImg = document.querySelector('.hero-img-card img');
+      if (heroImg && s.hero_image) heroImg.src = s.hero_image;
+      if (s.bank_details && s.bank_details.alias) AppState.bankAlias = s.bank_details.alias;
     }
   } catch (e) {
     console.warn('Configuración por defecto en uso');
@@ -2189,7 +2193,7 @@ function generateAIResponse(rawQuery) {
   // 22. Descuentos, Promociones y Ofertas
   if (['descuento', 'descuentos', 'promocion', 'promociones', 'promo', 'promos', 'oferta', 'ofertas', 'cupon', '15%'].some(k => norm.includes(k))) {
     return {
-      text: `En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`GALILEA.JOYAS.ARG\`).\n• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
+      text: `En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).\n• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
       products: matched,
       suggestions: ["Datos de Transferencia 15% OFF", "Calcular cuotas", "Ver catálogo de joyas"]
     };
@@ -2217,7 +2221,7 @@ function generateAIResponse(rawQuery) {
   // 25. Medios de Pago, Cuotas y Transferencia
   if (['pago', 'pagos', 'cuota', 'cuotas', 'tarjeta', 'tarjetas', 'mercado pago', 'mercadopago', 'transferencia', 'banco', 'alias', 'cbu'].some(k => norm.includes(k))) {
     return {
-      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`GALILEA.JOYAS.ARG\`).\n• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits.`,
+      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).\n• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits.`,
       products: matched,
       suggestions: ["Datos para Transferencia", "¿Cómo es el envío Andreani?", "Ver catálogo completo"]
     };
