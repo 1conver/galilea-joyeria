@@ -182,6 +182,7 @@ async function initDashboard() {
   fetchCatalogOptions();
   setupFilterListeners();
   setupSettingsForm();
+  setupTestPayment();
   setupUserCreationForm();
   switchModule('orders');
 }
@@ -1422,6 +1423,7 @@ async function fetchSettings() {
       AdminState.bankLoaded = Object.fromEntries(BANK_INPUTS.map(([key]) => [key, bank[key] || '']));
       BANK_INPUTS.forEach(([key, id]) => { document.getElementById(id).value = bank[key] || ''; });
       await fetchBankInfo();
+      fetchMercadoPagoInfo();
       const last = (AdminState.bankInfo.history || [])[0];
       document.getElementById('bank-status').innerHTML = s.bank_configured
         ? 'Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email. Para cambiarla te pedimos tu contraseña.'
@@ -1431,6 +1433,58 @@ async function fetchSettings() {
   } catch (e) {
     console.error(e);
   }
+}
+
+// Mercado Pago: muestra si la cuenta conectada es de prueba o real y permite pagar un cobro de prueba
+async function fetchMercadoPagoInfo() {
+  const status = document.getElementById('mp-status');
+  if (!status || !AdminState.token) return;
+  try {
+    const res = await fetch('/api/admin/mercadopago', { headers: { 'Authorization': `Bearer ${AdminState.token}` } });
+    const data = await res.json();
+    if (!data.success) return;
+    status.innerHTML = !data.configured
+      ? '<strong style="color: #962332;">No hay cuenta conectada:</strong> falta MERCADOPAGO_ACCESS_TOKEN en Vercel.'
+      : data.mode === 'test'
+        ? '<strong style="color: #962332;">Conectada a una cuenta de PRUEBA:</strong> solo funcionan las tarjetas de prueba y no se cobra plata real. Para vender, cargá en Vercel el Access Token de producción de tu cuenta.'
+        : data.mode === 'live'
+          ? '<strong style="color: #205C33;">Conectada a tu cuenta real:</strong> los cobros son de verdad y llegan a tu Mercado Pago.'
+          : 'Hay una cuenta cargada pero Mercado Pago no respondió. Probá de nuevo en un rato.';
+    const amount = document.getElementById('mp-test-amount');
+    amount.min = data.test_min;
+    amount.max = data.test_max;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setupTestPayment() {
+  const btn = document.getElementById('btn-mp-test');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    // la pestaña se abre ya (al hacer clic) para que el navegador no la bloquee
+    const tab = window.open('', '_blank');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/test-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AdminState.token}` },
+        body: JSON.stringify({ amount: Number(document.getElementById('mp-test-amount').value) })
+      });
+      const result = await res.json();
+      if (result.success && result.init_point) {
+        if (tab) tab.location.href = result.init_point; else window.location.href = result.init_point;
+        showToast(`Cobro de prueba ${result.order_id} creado`);
+      } else {
+        if (tab) tab.close();
+        showToast(result.error || 'No se pudo crear el cobro de prueba');
+      }
+    } catch (err) {
+      if (tab) tab.close();
+      showToast('Sin conexión, probá de nuevo');
+    }
+    btn.disabled = false;
+  });
 }
 
 async function fetchBankInfo() {

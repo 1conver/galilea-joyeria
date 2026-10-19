@@ -198,7 +198,8 @@ def health(req):
         print("Health: la base no responde:", e)
         storage_ok = False
     return ok(storage=store.kind, storage_ok=storage_ok, images=image_storage(req),
-              emails=notify.configured(), mercadopago=bool(payments.token()), instagram=instagram.configured())
+              emails=notify.configured(), mercadopago=bool(payments.token()),
+              mercadopago_mode=payments.mercadopago_mode(), instagram=instagram.configured())
 
 def instagram_posts(req):
     return ok(**instagram.get_posts(get_store()))
@@ -348,12 +349,27 @@ def admin_order_status(req):
     store.put_order(order)
     return ok(message=f"Pedido {order['id']} actualizado", order=order, emailed=emailed)
 
+def admin_mercadopago(req):
+    req.require("admin")
+    low, high = payments.TEST_PAYMENT_LIMITS
+    return ok(configured=bool(payments.token()), mode=payments.mercadopago_mode(), test_min=low, test_max=high)
+
+def admin_test_payment(req):
+    """Cobro de prueba con la cuenta de MP cargada: comprueba que los pagos reales llegan."""
+    user = req.require("admin")
+    try:
+        return 200, payments.create_test_payment(req.body.get("amount"), user, get_store().put_order)
+    except RuntimeError as e:  # Mercado Pago rechazó la preferencia
+        print("MP test payment:", e)
+        raise ApiError(502, "Mercado Pago no aceptó el cobro de prueba")
+
 def admin_stats(req):
     req.require("admin", "operario")
     orders = get_store().list_orders()
     count = lambda field, value: len([o for o in orders if o.get(field) == value])
     return ok(stats={
-        "total_revenue_ars": sum(o.get("total_amount", 0) for o in orders if o.get("payment_status") == "approved"),
+        "total_revenue_ars": sum(o.get("total_amount", 0) for o in orders
+                                if o.get("payment_status") == "approved" and not o.get("test_payment")),
         "total_orders": len(orders),
         "pending_transfers": count("payment_status", "pending_verification"),
         "in_workshop": count("shipping_status", "in_workshop"),
@@ -538,6 +554,8 @@ ROUTES = [
     ("PUT", r"/api/admin/settings", admin_settings),
     ("GET", r"/api/admin/bank", admin_bank_info),
     ("POST", r"/api/admin/bank/code", admin_bank_code),
+    ("GET", r"/api/admin/mercadopago", admin_mercadopago),
+    ("POST", r"/api/admin/test-payment", admin_test_payment),
     ("GET", r"/api/admin/users", admin_users),
     ("POST", r"/api/admin/users", admin_create_user),
 ]

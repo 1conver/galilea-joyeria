@@ -86,6 +86,23 @@ def _mp(method, path, body=None):
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"Mercado Pago {e.code}: {e.read().decode()[:300]}")
 
+_mode_cache = {}
+
+def mercadopago_mode():
+    """'test' si el token es de un usuario de prueba de MP (no cobra de verdad), 'live' si es real,
+    None sin token o si MP no responde. Se consulta una vez por token."""
+    t = token()
+    if not t:
+        return None
+    if t not in _mode_cache:
+        try:
+            tags = _mp("GET", "/users/me").get("tags") or []
+        except Exception as e:
+            print("MP users/me:", e)
+            return None
+        _mode_cache[t] = "test" if "test_user" in tags else "live"
+    return _mode_cache[t]
+
 def price_cart(items, products):
     """Devuelve (líneas, total) usando los precios del catálogo, nunca los del cliente."""
     by_id = {str(p.get("id")): p for p in products}
@@ -125,6 +142,33 @@ def create_preference(data, products, put_order):
     lines, total = price_cart(data.get("items"), products)
     order_id = f"GAL-{uuid.uuid4().hex[:8].upper()}"
     put_order(_new_order(order_id, customer, lines, total))
+    return _checkout(order_id, customer, lines, total)
+
+TEST_PAYMENT_LIMITS = (10, 5000)  # ARS
+
+def create_test_payment(amount, admin, put_order):
+    """Cobro de prueba desde el panel: un pago real chico con la cuenta de MP cargada, para comprobar
+    que los cobros llegan. No toca el stock ni suma a lo facturado; después se devuelve desde MP."""
+    try:
+        amount = round(float(amount), 2)
+    except (TypeError, ValueError):
+        raise ValueError("Monto inválido")
+    low, high = TEST_PAYMENT_LIMITS
+    if not low <= amount <= high:
+        raise ValueError(f"El cobro de prueba tiene que ser de ${low} a ${high}")
+    if not token():
+        raise ValueError("Falta cargar MERCADOPAGO_ACCESS_TOKEN en Vercel")
+    customer = _customer({"name": admin.get("name", ""), "email": admin.get("email", "")})
+    lines = [{"id": "PRUEBA", "name": "Cobro de prueba", "size": "-", "quantity": 1, "price": amount,
+              "metal": "", "image": ""}]
+    order_id = f"GAL-PRUEBA-{uuid.uuid4().hex[:6].upper()}"
+    order = _new_order(order_id, customer, lines, amount, test_payment=True,
+                       notes=f"Cobro de prueba hecho desde el panel por {admin.get('name', '')}. Devolvelo desde Mercado Pago.")
+    put_order(order)
+    return _checkout(order_id, customer, lines, amount)
+
+def _checkout(order_id, customer, lines, total):
+    """Crea la preferencia de Checkout Pro para una orden ya guardada como pendiente."""
     if not token():  # modo prueba: NO aprueba nada, la orden queda pendiente
         return {"success": True, "mode": "sandbox", "order_id": order_id, "total_ars": total,
                 "init_point": f"/?checkout=sandbox&order={order_id}",
