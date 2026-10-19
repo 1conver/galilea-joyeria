@@ -1,7 +1,8 @@
 """API de GALILEA: una sola implementación para server.py (local) y api/index.py (Vercel).
 dispatch(method, path, query, body, headers) -> (status, payload)."""
-import os, re, json, uuid
+import os, re, json, uuid, time, hmac, hashlib, secrets
 from datetime import datetime
+from html import escape
 
 import auth, catalog, instagram, notify, payments, uploads
 from store import get_store, REPO_DATA_DIR
@@ -13,7 +14,7 @@ except Exception:
 
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 UPLOADS_DIR = os.path.join(PUBLIC_DIR, "uploads")
-SECRET_SETTINGS = ("mercadopago_access_token",)
+SECRET_SETTINGS = ("mercadopago_access_token", "bank_history")
 # El token de Mercado Pago no se carga desde el panel: va en las variables de entorno (Vercel / .env)
 SETTINGS_KEYS = ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer_discount_pct",
                  "atelier_address", "contact_phone"]
@@ -377,14 +378,86 @@ def admin_upload(req):
     url, warning = uploads.save_image(data, UPLOADS_DIR, req.headers.get("x-vercel-oidc-token", ""))
     return ok(url=url, warning=warning, filename=req.body.get("filename", "joya.jpg"))
 
-def admin_settings(req):
+# --- CUENTA PARA TRANSFERENCIAS: cambiarla pide la contraseña y, con emails activos, un código ---
+
+BANK_CODE_MINUTES = 10
+
+def bank_confirm_email():
+    """Casilla que recibe el código. Se define en Vercel (no en el panel), así nadie la puede cambiar desde ahí."""
+    return (os.environ.get("BANK_CONFIRM_EMAIL") or os.environ.get("SMTP_USER") or "").strip()
+
+def bank_code_required():
+    return notify.configured() and bool(bank_confirm_email())
+
+def mask_email(email):
+    name, _, domain = email.partition("@")
+    return f"{name[:2]}{'•' * max(len(name) - 2, 1)}@{domain}"
+
+def _bank_code_hash(code, bank):
+    # el código vale solo para estos datos exactos: no sirve para confirmar otra cuenta
+    fingerprint = hashlib.sha256(json.dumps(bank, sort_keys=True).encode()).hexdigest()
+    return auth._sign(f"bank-code:{code}:{fingerprint}")
+
+def admin_bank_info(req):
     req.require("admin")
+    return ok(code_required=bank_code_required(),
+              confirm_email=mask_email(bank_confirm_email()) if bank_code_required() else "",
+              history=list(reversed(load_settings().get("bank_history", [])))[:10])
+
+def admin_bank_code(req):
+    req.require("admin")
+    if not bank_code_required():
+        raise ApiError(400, "El código por email se activa cuando se configuran los emails (SMTP)")
+    bank = payments.clean_bank_details(req.body.get("bank_details"))
+    store = get_store()
+    if store.get("bank_code", {}).get("sent_at", 0) > time.time() - 60:
+        raise ApiError(429, "Esperá un minuto antes de pedir otro código")
+    code = f"{secrets.randbelow(10 ** 6):06d}"
+    lines = (f"Banco: {bank['banco']}\nTitular: {bank['titular']}\nCUIT/CUIL: {bank['cuit']}\n"
+             f"CBU/CVU: {bank['cbu']}\nAlias: {bank['alias']}")
+    notify.send(bank_confirm_email(), f"Código {code} para cambiar la cuenta de GALILEA",
+                f"Alguien del panel quiere cambiar la cuenta donde transfieren los clientes a:\n\n{lines}\n\n"
+                f"Código: {code} (vence en {BANK_CODE_MINUTES} minutos)\n\nSi no fuiste vos, no lo compartas y cambiá tu contraseña.",
+                f"<p>Alguien del panel quiere cambiar la cuenta donde transfieren los clientes a:</p>"
+                f"<p style='background:#FDF4F5;padding:12px 16px;border-radius:8px'>{escape(lines).replace(chr(10), '<br>')}</p>"
+                f"<p style='font-size:28px;letter-spacing:6px'><b>{code}</b></p>"
+                f"<p>Vence en {BANK_CODE_MINUTES} minutos. Si no fuiste vos, no lo compartas y cambiá tu contraseña.</p>")
+    store.put("bank_code", {"hash": _bank_code_hash(code, bank), "exp": time.time() + BANK_CODE_MINUTES * 60,
+                            "tries": 0, "sent_at": time.time()})
+    return ok(message=f"Te mandamos un código a {mask_email(bank_confirm_email())}")
+
+def confirm_bank_change(user, bank, body):
+    """ApiError si falta la contraseña de quien está en el panel o el código del email."""
+    account = next((u for u in load_users() if u.get("id") == user.get("id")), None)
+    if not account or not auth.check_password(str(body.get("bank_password") or ""), account.get("password_hash")):
+        raise ApiError(403, "La contraseña no es correcta")
+    if not bank_code_required():
+        return
+    store = get_store()
+    pending = store.get("bank_code", {})
+    if not pending.get("hash") or pending.get("exp", 0) < time.time() or pending.get("tries", 0) >= 5:
+        raise ApiError(403, "El código venció o se usó: pedí uno nuevo")
+    code = re.sub(r"\D", "", str(body.get("bank_code") or ""))
+    if not hmac.compare_digest(pending["hash"], _bank_code_hash(code, bank)):
+        pending["tries"] = pending.get("tries", 0) + 1
+        store.put("bank_code", pending)
+        raise ApiError(403, "El código no es correcto (o los datos cambiaron después de pedirlo)")
+    store.put("bank_code", {})  # un solo uso
+
+def admin_settings(req):
+    user = req.require("admin")
     settings = load_settings()
     catalog.apply_option_settings(settings, req.body)  # categorías y materiales
     settings.update(clean_contact(req.body))
     settings.update(clean_hero_image(req.body))
     if "bank_details" in req.body:
-        settings["bank_details"] = payments.clean_bank_details(req.body["bank_details"])
+        bank = payments.clean_bank_details(req.body["bank_details"])
+        if bank != settings.get("bank_details"):
+            confirm_bank_change(user, bank, req.body)
+            settings["bank_details"] = bank
+            history = settings.get("bank_history", []) + [{"at": payments.now_ar(), "by": user.get("name", ""),
+                                                           "alias": bank["alias"], "cbu_end": bank["cbu"][-4:]}]
+            settings["bank_history"] = history[-20:]
     for key in SETTINGS_KEYS:
         if key in req.body:
             settings[key] = req.body[key]
@@ -441,6 +514,8 @@ ROUTES = [
     ("DELETE", r"/api/admin/products/(?P<id>[^/]+)", admin_delete_product),
     ("POST", r"/api/admin/upload", admin_upload),
     ("PUT", r"/api/admin/settings", admin_settings),
+    ("GET", r"/api/admin/bank", admin_bank_info),
+    ("POST", r"/api/admin/bank/code", admin_bank_code),
     ("GET", r"/api/admin/users", admin_users),
     ("POST", r"/api/admin/users", admin_create_user),
 ]

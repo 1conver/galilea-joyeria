@@ -37,6 +37,10 @@ Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http
 - La cuenta donde transfieren los clientes (banco, titular, CUIT/CUIL, CBU/CVU, alias) también va en **Ajustes**.
   Mientras no se cargue, la tienda muestra la cuenta de ejemplo de `payments.py` y el panel lo avisa.
   Cada pedido guarda la cuenta vigente al comprar, que es la que sale en su email.
+- Cambiar la cuenta pide la **contraseña** de quien está en el panel. Con emails activos (SMTP) pide además un
+  **código de 6 números** que llega a `BANK_CONFIRM_EMAIL` (o, si no está, a `SMTP_USER`); esa casilla se define
+  en Vercel y no se puede cambiar desde el panel. El código vale 10 minutos, una sola vez y solo para esos datos.
+  Queda registrado quién y cuándo cambió la cuenta (se ve en Ajustes).
 
 ## Contacto e Instagram
 - WhatsApp e Instagram se editan en `/admin` → **Ajustes** → Contacto y redes. Los usan los botones de la

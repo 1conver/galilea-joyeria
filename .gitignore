@@ -12,3 +12,5 @@ data/users_extra.json
 # Token renovado y publicaciones de Instagram guardadas en local
 data/instagram_auth.json
 data/instagram_cache.json
+# Código pendiente para cambiar la cuenta de transferencias (local)
+data/bank_code.json

@@ -1391,14 +1391,134 @@ async function fetchSettings() {
       renderHeroPhoto(s.hero_image || '');
       // Sin cuenta cargada, los campos quedan vacíos (la tienda muestra la cuenta de ejemplo)
       const bank = s.bank_configured ? (s.bank_details || {}) : {};
+      AdminState.bankLoaded = Object.fromEntries(BANK_INPUTS.map(([key]) => [key, bank[key] || '']));
       BANK_INPUTS.forEach(([key, id]) => { document.getElementById(id).value = bank[key] || ''; });
+      await fetchBankInfo();
+      const last = (AdminState.bankInfo.history || [])[0];
       document.getElementById('bank-status').innerHTML = s.bank_configured
-        ? 'Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email.'
+        ? 'Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email. Para cambiarla te pedimos tu contraseña.'
+          + (last ? `<br>Último cambio: ${escapeAdminHtml(last.at)} por ${escapeAdminHtml(last.by)}.` : '')
         : '<strong style="color: #962332;">Todavía no cargaste tu cuenta:</strong> la tienda está mostrando datos de ejemplo. Completala antes de vender por transferencia.';
     }
   } catch (e) {
     console.error(e);
   }
+}
+
+async function fetchBankInfo() {
+  AdminState.bankInfo = {};
+  if (!AdminState.token) return;
+  try {
+    const res = await fetch('/api/admin/bank', { headers: { 'Authorization': `Bearer ${AdminState.token}` } });
+    const data = await res.json();
+    if (data.success) AdminState.bankInfo = data;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function escapeAdminHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function saveSettings(payload) {
+  try {
+    const res = await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AdminState.token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('Cambios guardados');
+      fetchSettings();
+    } else {
+      showToast(result.error || 'Error guardando ajustes');
+    }
+    return result;
+  } catch (err) {
+    showToast('Sin conexión, probá de nuevo');
+    return { success: false };
+  }
+}
+
+// Cambiar la cuenta de transferencias: se muestra cómo queda y se confirma con la contraseña
+// (y con un código por email cuando los emails están activos)
+function openBankConfirmModal(payload) {
+  const overlay = document.getElementById('admin-modal-overlay');
+  const container = document.getElementById('admin-modal-content');
+  const info = AdminState.bankInfo || {};
+  const bank = payload.bank_details;
+  const labels = { banco: 'Banco', tipo_cuenta: 'Tipo de cuenta', titular: 'Titular', cuit: 'CUIT o CUIL', cbu: 'CBU o CVU', alias: 'Alias' };
+
+  container.innerHTML = `
+    <div class="admin-modal-card" style="max-width: 520px;">
+      <button class="btn-close-modal" onclick="closeAdminModal()">${window.ICONS.close}</button>
+      <h2 class="admin-modal-title">Confirmá la cuenta nueva</h2>
+      <p class="admin-modal-subtitle">Desde que guardes, los clientes van a transferir a esta cuenta. Revisá bien el CBU y el alias.</p>
+      <div style="background: var(--admin-rose-soft, #FDF4F5); border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.4rem; font-size: 0.86rem; line-height: 1.7;">
+        ${BANK_INPUTS.map(([key]) => `<div><span style="color: var(--admin-text-secondary);">${labels[key]}:</span> <strong>${escapeAdminHtml(bank[key]) || '—'}</strong></div>`).join('')}
+      </div>
+      <form id="bank-confirm-form">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Tu contraseña del panel</label>
+          <input type="password" id="bank-confirm-password" class="form-input" autocomplete="current-password" required>
+        </div>
+        ${info.code_required ? `
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Código del email</label>
+            <div style="display: flex; gap: 0.6rem;">
+              <input type="text" id="bank-confirm-code" class="form-input" inputmode="numeric" maxlength="6" placeholder="6 números" required>
+              <button type="button" class="btn-op-action" id="btn-bank-code">Enviar código</button>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Llega a ${escapeAdminHtml(info.confirm_email)}</span>
+          </div>` : ''}
+        <div style="display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 1.4rem;">
+          <button type="button" class="btn-luxury-outline" onclick="closeAdminModal()">Cancelar</button>
+          <button type="submit" class="btn-luxury" id="btn-bank-confirm"><span>Confirmar y guardar</span></button>
+        </div>
+      </form>
+    </div>
+  `;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('bank-confirm-password').focus();
+
+  const codeBtn = document.getElementById('btn-bank-code');
+  if (codeBtn) {
+    codeBtn.addEventListener('click', async () => {
+      codeBtn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/bank/code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AdminState.token}` },
+          body: JSON.stringify({ bank_details: bank })
+        });
+        const result = await res.json();
+        showToast(result.success ? result.message : (result.error || 'No se pudo mandar el código'));
+      } catch (err) {
+        showToast('Sin conexión, probá de nuevo');
+      }
+      setTimeout(() => { codeBtn.disabled = false; }, 60000);
+    });
+  }
+
+  document.getElementById('bank-confirm-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-bank-confirm');
+    btn.disabled = true;
+    const codeInput = document.getElementById('bank-confirm-code');
+    const result = await saveSettings({
+      ...payload,
+      bank_password: document.getElementById('bank-confirm-password').value,
+      bank_code: codeInput ? codeInput.value.trim() : ''
+    });
+    if (result.success) closeAdminModal();
+    else btn.disabled = false;
+  });
 }
 
 function setupSettingsForm() {
@@ -1416,28 +1536,15 @@ function setupSettingsForm() {
         instagram_url: document.getElementById('set-instagram').value.trim(),
         hero_image: document.getElementById('set-hero-image').value.trim()
       };
+      // la cuenta solo se manda si cambió: así guardar textos o la portada no pide contraseña
       const bank = Object.fromEntries(BANK_INPUTS.map(([key, id]) => [key, document.getElementById(id).value.trim()]));
-      if (Object.values(bank).some(Boolean)) payload.bank_details = bank;
-
-      try {
-        const res = await fetch('/api/admin/settings', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${AdminState.token}`
-          },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.success) {
-          showToast('Cambios guardados');
-          fetchSettings();
-        } else {
-          showToast(result.error || 'Error guardando ajustes');
-        }
-      } catch (err) {
-        showToast('Sin conexión, probá de nuevo');
+      const loaded = AdminState.bankLoaded || {};
+      const bankChanged = BANK_INPUTS.some(([key]) => bank[key] !== (loaded[key] || ''));
+      if (bankChanged && Object.values(bank).some(Boolean)) {
+        openBankConfirmModal({ ...payload, bank_details: bank });
+        return;
       }
+      await saveSettings(payload);
     });
   }
 }
