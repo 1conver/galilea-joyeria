@@ -102,6 +102,27 @@ def clean_hero_image(data):
         raise ValueError("La foto de portada tiene que ser una foto subida o un link https://")
     return {"hero_image": url}
 
+# Tarjetas de "Explorá por categoría" en la tienda (public/index.html, data-collection)
+COLLECTION_CARDS = ("anillos", "collares", "aros", "pulseras", "diamantes", "limitada")
+
+def clean_collection_images(data, current):
+    """Fotos de las tarjetas de categoría: {tarjeta: url}. Vacío = la foto de siempre."""
+    if "collection_images" not in data:
+        return {}
+    raw = data["collection_images"] if isinstance(data["collection_images"], dict) else {}
+    images = dict(current or {})
+    for card in COLLECTION_CARDS:
+        if card not in raw:
+            continue
+        url = str(raw[card] or "").strip()
+        if url and not uploads.safe_image_url(url):
+            raise ValueError("Las fotos de categoría tienen que ser fotos subidas o links https://")
+        if url:
+            images[card] = url
+        else:
+            images.pop(card, None)
+    return {"collection_images": images}
+
 def public_settings(settings):
     safe = {k: v for k, v in settings.items() if k not in SECRET_SETTINGS}
     for key, value in DEFAULT_CONTACT.items():
@@ -450,6 +471,7 @@ def admin_settings(req):
     catalog.apply_option_settings(settings, req.body)  # categorías y materiales
     settings.update(clean_contact(req.body))
     settings.update(clean_hero_image(req.body))
+    settings.update(clean_collection_images(req.body, settings.get("collection_images")))
     if "bank_details" in req.body:
         bank = payments.clean_bank_details(req.body["bank_details"])
         if bank != settings.get("bank_details"):

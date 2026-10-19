@@ -1352,26 +1352,53 @@ const DEFAULT_HERO_IMAGE = 'https://images.unsplash.com/photo-1599643478518-a784
 const BANK_INPUTS = [['banco', 'set-bank-banco'], ['tipo_cuenta', 'set-bank-tipo'], ['titular', 'set-bank-titular'],
   ['cuit', 'set-bank-cuit'], ['cbu', 'set-bank-cbu'], ['alias', 'set-bank-alias']];
 
-// Foto de portada: misma ficha de foto que las joyas (subir, arrastrar o pegar link)
+// Tarjetas de "Explorá por categoría" (mismas fotos originales que public/index.html)
+const COLLECTION_CARDS = [
+  ['anillos', 'Anillos', 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80'],
+  ['collares', 'Collares', 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80'],
+  ['aros', 'Aros', 'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=600&q=80'],
+  ['pulseras', 'Pulseras', 'https://images.unsplash.com/photo-1611591475825-9c9868e82ef6?auto=format&fit=crop&w=600&q=80'],
+  ['diamantes', 'Alta joyería', 'https://images.unsplash.com/photo-1603561596112-0a132b757442?auto=format&fit=crop&w=600&q=80'],
+  ['limitada', 'Edición limitada', 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80']
+];
+
+// Foto de ajustes con la misma ficha que las joyas (subir, arrastrar o pegar link) + "Volver a la original".
+// El link queda vacío mientras se use la original.
+function renderSettingsPhoto(box, { prefix, inputId, label, url, defaultUrl, hint }) {
+  box.innerHTML = photoField({ prefix, inputId, label, url: url || defaultUrl, status: url ? 'Foto elegida por vos' : hint });
+  // texto y no url: el formulario valida y una foto subida es /uploads/... (lo revisa el servidor)
+  const input = document.getElementById(inputId);
+  input.type = 'text';
+  if (!url) input.value = '';
+  bindUploadZone(`${prefix}-zone`, `${prefix}-file`, inputId, `${prefix}-preview`, `${prefix}-status`);
+  if (url) {
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'photo-btn photo-btn-ghost';
+    reset.textContent = 'Volver a la original';
+    reset.onclick = () => {
+      renderSettingsPhoto(box, { prefix, inputId, label, url: '', defaultUrl, hint });
+      showToast('Tocá Guardar para volver a la foto original');
+    };
+    box.querySelector('.photo-field-actions').appendChild(reset);
+  }
+}
+
 function renderHeroPhoto(url) {
   const box = document.getElementById('set-hero-photo');
   if (!box) return;
-  box.innerHTML = photoField({
-    prefix: 'hero', inputId: 'set-hero-image', label: 'Foto de portada', url: url || DEFAULT_HERO_IMAGE,
-    status: url ? 'Foto elegida por vos' : 'Foto original de la tienda. Conviene una vertical (4:5).'
+  renderSettingsPhoto(box, { prefix: 'hero', inputId: 'set-hero-image', label: 'Foto de portada', url,
+    defaultUrl: DEFAULT_HERO_IMAGE, hint: 'Foto original de la tienda. Conviene una vertical (4:5).' });
+}
+
+function renderCollectionPhotos(images) {
+  const grid = document.getElementById('set-collection-photos');
+  if (!grid) return;
+  grid.innerHTML = COLLECTION_CARDS.map(([id]) => `<div id="set-collection-${id}"></div>`).join('');
+  COLLECTION_CARDS.forEach(([id, label, defaultUrl]) => {
+    renderSettingsPhoto(document.getElementById(`set-collection-${id}`), { prefix: `col-${id}`, inputId: `set-col-${id}`,
+      label, url: (images || {})[id] || '', defaultUrl, hint: 'Foto original' });
   });
-  // texto y no url: el formulario valida y una foto subida es /uploads/... (lo revisa el servidor)
-  const input = document.getElementById('set-hero-image');
-  input.type = 'text';
-  // si no se cambió, se guarda vacío para seguir usando la original
-  if (!url) input.value = '';
-  bindUploadZone('hero-zone', 'hero-file', 'set-hero-image', 'hero-preview', 'hero-status');
-  const reset = document.getElementById('btn-hero-reset');
-  reset.style.display = url ? 'inline-flex' : 'none';
-  reset.onclick = () => {
-    renderHeroPhoto('');
-    showToast('Tocá Guardar para volver a la foto original');
-  };
 }
 
 async function fetchSettings() {
@@ -1389,6 +1416,7 @@ async function fetchSettings() {
       document.getElementById('set-whatsapp').value = s.whatsapp_number || '';
       document.getElementById('set-instagram').value = s.instagram_url || '';
       renderHeroPhoto(s.hero_image || '');
+      renderCollectionPhotos(s.collection_images);
       // Sin cuenta cargada, los campos quedan vacíos (la tienda muestra la cuenta de ejemplo)
       const bank = s.bank_configured ? (s.bank_details || {}) : {};
       AdminState.bankLoaded = Object.fromEntries(BANK_INPUTS.map(([key]) => [key, bank[key] || '']));
@@ -1534,7 +1562,8 @@ function setupSettingsForm() {
         hero_desc: document.getElementById('set-hero-desc').value,
         whatsapp_number: document.getElementById('set-whatsapp').value.trim(),
         instagram_url: document.getElementById('set-instagram').value.trim(),
-        hero_image: document.getElementById('set-hero-image').value.trim()
+        hero_image: document.getElementById('set-hero-image').value.trim(),
+        collection_images: Object.fromEntries(COLLECTION_CARDS.map(([id]) => [id, document.getElementById(`set-col-${id}`).value.trim()]))
       };
       // la cuenta solo se manda si cambió: así guardar textos o la portada no pide contraseña
       const bank = Object.fromEntries(BANK_INPUTS.map(([key, id]) => [key, document.getElementById(id).value.trim()]));

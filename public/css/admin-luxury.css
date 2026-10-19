@@ -1133,3 +1133,5 @@ body.admin-body {
 .settings-block-title { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 400; color: var(--admin-text-main); margin-bottom: 0.2rem; }
 .settings-block-desc { font-size: 0.78rem; color: var(--admin-text-secondary); margin-bottom: 1rem; }
 .settings-block .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.settings-photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+@media (max-width: 760px) { .settings-photo-grid { grid-template-columns: 1fr; } }

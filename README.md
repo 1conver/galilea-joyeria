@@ -34,6 +34,7 @@ Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http
 
 ## Portada y cuenta para transferencias
 - La foto de portada se cambia en `/admin` → **Ajustes** (subir, arrastrar o pegar link; "Volver a la foto original").
+  Ahí mismo, **Fotos de categorías** cambia las 6 tarjetas de "Explorá por categoría".
 - La cuenta donde transfieren los clientes (banco, titular, CUIT/CUIL, CBU/CVU, alias) también va en **Ajustes**.
   Mientras no se cargue, la tienda muestra la cuenta de ejemplo de `payments.py` y el panel lo avisa.
   Cada pedido guarda la cuenta vigente al comprar, que es la que sale en su email.

@@ -116,6 +116,11 @@ async function fetchStoreSettings() {
       if (heroDesc && s.hero_desc) heroDesc.textContent = s.hero_desc;
       const heroImg = document.querySelector('.hero-img-card img');
       if (heroImg && s.hero_image) heroImg.src = s.hero_image;
+      // Fotos de "Explorá por categoría" elegidas en el panel
+      Object.entries(s.collection_images || {}).forEach(([card, url]) => {
+        const img = document.querySelector(`[data-collection="${card}"] img`);
+        if (img && url) img.src = url;
+      });
       if (s.bank_details && s.bank_details.alias) AppState.bankAlias = s.bank_details.alias;
     }
   } catch (e) {
