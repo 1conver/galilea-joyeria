@@ -359,7 +359,6 @@ function renderProducts() {
   }
 
   gridEl.innerHTML = AppState.filteredProducts.map((product, idx) => {
-    const cuota3 = Math.round(product.price / 3);
     const badgeClass = getBadgeStyleClass(product.badge);
     const isMobile = window.innerWidth < 768;
     const cols = isMobile ? 2 : 4;
@@ -389,7 +388,7 @@ function renderProducts() {
           <span class="product-category-tag">${product.metal} · ${product.category_label}</span>
           <h3 class="product-title" data-id="${product.id}">${product.name}</h3>
           <div class="product-price">${formatARS(product.price)}</div>
-          <div class="product-installments">3 cuotas sin interés de ${formatARS(cuota3)}</div>
+          <div class="product-installments">Hasta 6 cuotas con Mercado Pago</div>
         </div>
       </article>
     `;
@@ -430,8 +429,6 @@ function openQuickView(product) {
   const modalOverlay = document.getElementById('quickview-modal-overlay');
   const modalContent = document.getElementById('quickview-modal-content');
 
-  const cuota3 = Math.round(product.price / 3);
-  const cuota6 = Math.round(product.price / 6);
 
   // Tabla de especificaciones
   let specsHtml = '';
@@ -486,7 +483,7 @@ function openQuickView(product) {
 
         <div>
           <div class="modal-price">${formatARS(product.price)}</div>
-          <div class="modal-installments">3 cuotas sin interés de ${formatARS(cuota3)} o 6 de ${formatARS(cuota6)}</div>
+          <div class="modal-installments">Hasta 6 cuotas con Mercado Pago</div>
         </div>
 
         <p class="modal-desc">${product.description}</p>
@@ -644,7 +641,6 @@ function updateCartUI() {
   if (footerEl) footerEl.style.display = 'flex';
 
   const subtotal = AppState.cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-  const cuota3 = Math.round(subtotal / 3);
 
   bodyEl.innerHTML = AppState.cart.map((item, idx) => `
     <div class="cart-item-row">
@@ -672,7 +668,7 @@ function updateCartUI() {
 
   if (subtotalEl) subtotalEl.textContent = formatARS(subtotal);
   if (totalEl) totalEl.textContent = formatARS(subtotal);
-  if (cuotasEl) cuotasEl.textContent = `3 cuotas sin interés de ${formatARS(cuota3)}`;
+  if (cuotasEl) cuotasEl.textContent = 'Hasta 6 cuotas con Mercado Pago';
 }
 
 function openCartDrawer() {
@@ -840,7 +836,7 @@ function openCheckoutModal() {
                 <span style="font-weight: 700;">${formatARS(subtotal)}</span>
               </div>
               <div style="color: var(--status-success); font-size: 0.75rem;">
-                3 cuotas sin interés de ${formatARS(Math.round(subtotal / 3))} o 6 cuotas de ${formatARS(Math.round(subtotal / 6))}
+                Hasta 6 cuotas. El costo de cada plan lo ves en Mercado Pago antes de pagar.
               </div>
             </div>
             <button class="btn-luxury" style="width: 100%;" id="btn-pay-mp">
@@ -865,7 +861,7 @@ function openCheckoutModal() {
                 <span style="font-weight: 700;">${formatARS(subtotal)}</span>
               </div>
               <div style="color: var(--status-success); font-size: 0.75rem;">
-                3 cuotas de ${formatARS(Math.round(subtotal / 3))} o 6 cuotas de ${formatARS(Math.round(subtotal / 6))}
+                Hasta 6 cuotas. El costo de cada plan lo ves en Mercado Pago antes de pagar.
               </div>
             </div>
             <button class="btn-luxury" style="width: 100%;" id="btn-pay-card">
@@ -1722,7 +1718,6 @@ function initAIChatAdvisor() {
     let prodsHtml = '';
     if (matchedProducts && matchedProducts.length > 0) {
       prodsHtml = matchedProducts.slice(0, 3).map(prod => {
-        const cuota3 = Math.round(prod.price / 3);
         const metalText = prod.metal ? `<div class="ai-prod-metal-tag">${escapeHTML(prod.metal)}</div>` : '';
         return `
           <div class="ai-prod-recommendation" data-id="${prod.id}">
@@ -1730,7 +1725,7 @@ function initAIChatAdvisor() {
             <div class="ai-prod-details" data-view-id="${prod.id}">
               <div class="ai-prod-title">${escapeHTML(prod.name)}</div>
               ${metalText}
-              <div class="ai-prod-price">${formatARS(prod.price)} <span style="font-size: 0.68rem; font-weight: normal; color: var(--text-muted);">· 3x ${formatARS(cuota3)}</span></div>
+              <div class="ai-prod-price">${formatARS(prod.price)}</div>
             </div>
             <div class="ai-prod-actions">
               <button type="button" class="ai-prod-view-btn" data-view-id="${prod.id}">
@@ -2004,7 +1999,7 @@ function generateAIResponse(rawQuery) {
   // 1. Guardrail para temas ajenos a la joyería
   if (isOffTopicJS(rawQuery)) {
     return {
-      text: `Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier.\n\nPodés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés.`,
+      text: `Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, metales nobles, gemología, talles y compras en el atelier.\n\nPodés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas.`,
       products: [],
       suggestions: ["¿Cómo elijo mi talle de anillo?", "Ver joyas en Oro 18K", "Promociones y Cuotas"]
     };
@@ -2013,7 +2008,7 @@ function generateAIResponse(rawQuery) {
   // 2. Saludos de cortesía
   if (['hola', 'buen dia', 'buenas tardes', 'buenas noches', 'que tal', 'como estas', 'buenas'].some(k => norm.includes(k)) && norm.split(' ').length <= 4) {
     return {
-      text: `¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **GALILEA Atelier**.\n\nSoy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas fijas sin interés** y envíos asegurados por Andreani.\n\n¿Te gustaría explorar alguna colección en particular?`,
+      text: `¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **GALILEA Atelier**.\n\nSoy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas con Mercado Pago** y envíos asegurados por Andreani.\n\n¿Te gustaría explorar alguna colección en particular?`,
       products: matched,
       suggestions: ["Ver Anillos y Solitarios", "¿Cómo mido mi talle?", "Joyas en Oro 18K"]
     };
@@ -2067,7 +2062,7 @@ function generateAIResponse(rawQuery) {
   // 8. Cómo comprar / Proceso de pedido
   if (['como compro', 'como es el proceso', 'pasos para comprar', 'como pago', 'hacer pedido', 'agregar al carrito', 'como hacer la compra', 'como encargar'].some(k => norm.includes(k))) {
     return {
-      text: `Comprar en GALILEA es ágil, seguro y transparente:\n\n1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.\n2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.\n3. **Elegí tu beneficio de pago:** Hasta **6 cuotas fijas sin interés** con tarjetas vía Mercado Pago o **15% OFF directo** por Transferencia Bancaria.\n4. **Envío asegurado:** Lo despachamos gratis a tu domicilio con Andreani y te enviamos el código de seguimiento satelital.`,
+      text: `Comprar en GALILEA es ágil, seguro y transparente:\n\n1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.\n2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.\n3. **Elegí tu beneficio de pago:** Hasta **6 cuotas con Mercado Pago** o **15% OFF directo** por Transferencia Bancaria.\n4. **Envío asegurado:** Lo despachamos gratis a tu domicilio con Andreani y te enviamos el código de seguimiento satelital.`,
       products: matched,
       suggestions: ["Ver Catálogo Completo", "Medios de pago y cuotas", "Hablar con un orfebre"]
     };
@@ -2132,7 +2127,7 @@ function generateAIResponse(rawQuery) {
     return {
       text: `Nuestra colección de **Aros de Autor** combina ligereza escultural y porte refinado:\n\n• Criollos y argollas macizas forjadas a mano en **Oro 18K y Plata 925**.\n• Cierres de seguridad reforzados antialérgicos para máximo confort.\n• Terminaciones pulidas a mano con brillo espejo inalterable.\n\nAquí tenés nuestras piezas más destacadas para ver detalles o agregar a tu bolsa:`,
       products: matchProductsJS('aros', products),
-      suggestions: ["Aros en Oro 18K", "Aros en Plata 925", "Calcular cuotas sin interés"]
+      suggestions: ["Aros en Oro 18K", "Aros en Plata 925", "Cuotas con Mercado Pago"]
     };
   }
 
@@ -2186,14 +2181,14 @@ function generateAIResponse(rawQuery) {
     return {
       text: `Nuestros diamantes son **cultivados en laboratorio con huella de carbono neutra certificada**:\n\n• **Identidad Absoluta:** Tienen exactamente la misma composición química (100% carbono puro cristalizado en red cúbica), dureza 10 Mohs y brillo óptico que un diamante de mina.\n• **Pureza Superior:** Seleccionamos graduaciones **VVS1 / VVS2** y escala de color **F-G (incoloro excepcional)**.\n• **Sostenibilidad:** Libres de conflicto ético y con trazabilidad verificable certificada.`,
       products: matchProductsJS('diamantes', products),
-      suggestions: ["Ver Alta Joyería Diamantes", "¿Tienen certificación oficial?", "Cuotas sin interés"]
+      suggestions: ["Ver Alta Joyería Diamantes", "¿Tienen certificación oficial?", "Cuotas con Mercado Pago"]
     };
   }
 
   // 22. Descuentos, Promociones y Ofertas
   if (['descuento', 'descuentos', 'promocion', 'promociones', 'promo', 'promos', 'oferta', 'ofertas', 'cupon', '15%'].some(k => norm.includes(k))) {
     return {
-      text: `En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).\n• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
+      text: `En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:\n\n• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).\n• **Hasta 6 cuotas con Mercado Pago** con tarjetas Visa, Mastercard y American Express.\n• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express.`,
       products: matched,
       suggestions: ["Datos de Transferencia 15% OFF", "Calcular cuotas", "Ver catálogo de joyas"]
     };
@@ -2212,16 +2207,16 @@ function generateAIResponse(rawQuery) {
   if (budget || ['precio', 'precios', 'cuanto sale', 'cuanto cuesta', 'costo', 'costos', 'presupuesto', 'barato', 'economico', 'accesible', 'caro', 'exclusivo'].some(k => norm.includes(k))) {
     const budgetStr = budget ? ` de hasta **${formatARS(budget)}**` : '';
     return {
-      text: `Para tu consulta de presupuesto${budgetStr}, seleccioné creaciones destacadas forjadas en metales nobles:\n\n• **Piezas en Plata 925 de Ley:** Desde $58.000 a $95.000 (o 3 cuotas fijas sin interés de ~$19.000).\n• **Orfebrería en Oro 18K Macizo:** Desde $190.000 a $380.000.\n• **Alta Joyería en Diamantes Cultivados:** Obras de autor de $390.000 a $780.000.\n\nRecordá que abonando por **Transferencia Bancaria tenés un 15% de descuento inmediato**, o podés financiar en **hasta 6 cuotas sin interés**.`,
+      text: `Para tu consulta de presupuesto${budgetStr}, seleccioné creaciones destacadas forjadas en metales nobles:\n\n• **Piezas en Plata 925 de Ley:** Desde $58.000 a $95.000.\n• **Orfebrería en Oro 18K Macizo:** Desde $190.000 a $380.000.\n• **Alta Joyería en Diamantes Cultivados:** Obras de autor de $390.000 a $780.000.\n\nRecordá que abonando por **Transferencia Bancaria tenés un 15% de descuento inmediato**, o podés pagar en **hasta 6 cuotas con Mercado Pago**.`,
       products: matched,
-      suggestions: ["Opciones más accesibles", "Joyas en Oro 18K", "Calcular cuotas sin interés"]
+      suggestions: ["Opciones más accesibles", "Joyas en Oro 18K", "Cuotas con Mercado Pago"]
     };
   }
 
   // 25. Medios de Pago, Cuotas y Transferencia
   if (['pago', 'pagos', 'cuota', 'cuotas', 'tarjeta', 'tarjetas', 'mercado pago', 'mercadopago', 'transferencia', 'banco', 'alias', 'cbu'].some(k => norm.includes(k))) {
     return {
-      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).\n• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits.`,
+      text: `Contamos con los siguientes beneficios comerciales en toda la Argentina:\n\n• **Hasta 6 cuotas con Mercado Pago** con tarjetas Visa, Mastercard y Amex. El costo de cada plan lo ves en Mercado Pago antes de pagar.\n• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: \`${AppState.bankAlias}\`).`,
       products: matched,
       suggestions: ["Datos para Transferencia", "¿Cómo es el envío Andreani?", "Ver catálogo completo"]
     };
@@ -2247,7 +2242,7 @@ function generateAIResponse(rawQuery) {
 
   // 28. Respuesta conversacional amplia y acogedora (evita insistencias rígidas)
   return {
-    text: `Con mucho gusto te asesoro. En **GALILEA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:\n\n• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.\n• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.\n• **Medición y primer ajuste de talle 100% bonificado** en todo el país.\n• **Hasta 6 cuotas fijas sin interés** con tarjetas y 15% OFF por transferencia bancaria.\n\nPodés elegir alguna de las sugerencias rápidas debajo o consultarme sobre cualquier pieza, metal o detalle de compra.`,
+    text: `Con mucho gusto te asesoro. En **GALILEA Atelier** nos especializamos en alta orfebrería de autor forjada en Buenos Aires:\n\n• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.\n• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.\n• **Medición y primer ajuste de talle 100% bonificado** en todo el país.\n• **Hasta 6 cuotas con Mercado Pago** y 15% OFF por transferencia bancaria.\n\nPodés elegir alguna de las sugerencias rápidas debajo o consultarme sobre cualquier pieza, metal o detalle de compra.`,
     products: matched,
     suggestions: ["Ver Anillos y Solitarios", "¿Cómo mido mi talle?", "Joyas en Oro 18K"]
   };

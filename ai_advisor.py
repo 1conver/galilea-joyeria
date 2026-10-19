@@ -21,7 +21,7 @@ DOMINIOS DE ASESORÍA:
 2. Materiales: líneas en metales nobles (Oro 18K amarillo, blanco o rosa y Plata 925) y líneas accesibles en acero quirúrgico, bronce platinado o bañado y fantasía. El material exacto de cada pieza figura en su ficha: nunca afirmes que una pieza es de oro o plata maciza si su ficha indica otro material, ni que una pieza bañada o de fantasía no se despinta.
 3. Gemología ética: Diamantes cultivados (lab-grown) carbono neutro certificados IGI/GIA de pureza VVS1/VVS2 y color incoloro F-G; zafiros, esmeraldas y perlas.
 4. Medidas y Talles en Argentina: Sistema métrico de diámetro interno en milímetros (16.5 mm = Talle 12/13; 17.2 mm = Talle 14/15; 18.0 mm = Talle 17/18; 19.0 mm = Talle 20/21). Primer ajuste de talle 100% bonificado sin cargo.
-5. Beneficios comerciales: 3 y 6 cuotas fijas sin interés con todas las tarjetas bancarias mediante Mercado Pago; 15% de descuento directo por Transferencia Bancaria (Alias: GALILEA.JOYAS.ARG).
+5. Beneficios comerciales: hasta 6 cuotas con tarjeta mediante Mercado Pago (el cliente ve el costo de cada plan en Mercado Pago antes de pagar; nunca prometas cuotas sin interés ni facturación automática); 15% de descuento directo por Transferencia Bancaria (Alias: GALILEA.JOYAS.ARG).
 6. Envíos y Packaging: Envío gratis asegurado a toda la Argentina por Andreani Custodia Express (24-48h CABA/GBA, 3-5 días interior). Packaging de gala en caja rígida de lino, lazo de satén y certificado de autenticidad.
 7. Atención personalizada y taller: Atelier en Av. Alvear 1850, Buenos Aires. Visitas con cita previa y contacto humano por WhatsApp al +54 9 11 5419-7890.
 8. Garantía y cuidado: Garantía perpetua sobre la ley de las piezas de Oro 18K y Plata 925; servicio de pulido y revisión anual sin cargo de por vida. Las piezas bañadas, de bronce o de fantasía requieren cuidado del agua, perfumes y cremas.
@@ -246,7 +246,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
                 "metales nobles, gemología, talles y compras en el atelier.<br><br>"
-                "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés."
+                "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas."
             ),
             "products": [],
             "suggestions": ["¿Cómo elijo mi talle de anillo?", "Ver joyas en Oro 18K", "Promociones y Cuotas"],
@@ -259,7 +259,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "¡Hola! Qué gusto saludarte. Te doy una cálida bienvenida a **GALILEA Atelier**.<br><br>"
                 "Soy tu asesora virtual de alta orfebrería y gemología. Puedo orientarte en la elección de piezas según tu estilo o presupuesto, "
-                "ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas fijas sin interés** y envíos asegurados por Andreani.<br><br>"
+                "ayudarte a medir tu talle de anillo con exactitud o detallarte nuestras facilidades de pago en hasta **6 cuotas con Mercado Pago** y envíos asegurados por Andreani.<br><br>"
                 "¿Te gustaría explorar alguna colección en particular?"
             ),
             "products": matched,
@@ -339,7 +339,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
                 "Comprar en GALILEA es ágil, seguro y transparente:<br><br>"
                 "1. **Elegí tu joya:** Podés verla en detalle con 'Ver' o agregarla directamente a tu compra con **'+ Bolsa'** aquí en el chat.<br>"
                 "2. **Seleccioná tu talle:** En tu bolsa hacé clic en 'Iniciar Pago Seguro'.<br>"
-                "3. **Elegí tu beneficio de pago:** Hasta **6 cuotas fijas sin interés** con tarjetas vía Mercado Pago o **15% OFF directo** por Transferencia Bancaria.<br>"
+                "3. **Elegí tu beneficio de pago:** Hasta **6 cuotas con Mercado Pago** o **15% OFF directo** por Transferencia Bancaria.<br>"
                 "4. **Envío asegurado:** Lo despachamos gratis a tu domicilio con Andreani y te enviamos el código de seguimiento satelital."
             ),
             "products": matched,
@@ -441,7 +441,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
                 "Aquí tenés nuestras piezas más destacadas para ver detalles o agregar a tu bolsa:"
             ),
             "products": match_products('aros', products),
-            "suggestions": ["Aros en Oro 18K", "Aros en Plata 925", "Calcular cuotas sin interés"]
+            "suggestions": ["Aros en Oro 18K", "Aros en Plata 925", "Cuotas con Mercado Pago"]
         }
 
     # 16. Colección de COLLARES y GARGANTILLAS
@@ -519,7 +519,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
                 "• **Sostenibilidad:** Libres de conflicto ético y con trazabilidad verificable certificada."
             ),
             "products": match_products('diamantes', products),
-            "suggestions": ["Ver Alta Joyería Diamantes", "¿Tienen certificación oficial?", "Cuotas sin interés"]
+            "suggestions": ["Ver Alta Joyería Diamantes", "¿Tienen certificación oficial?", "Cuotas con Mercado Pago"]
         }
 
     # 22. Descuentos, Promociones y Ofertas
@@ -528,7 +528,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "reply": (
                 "En **GALILEA Atelier** disponemos de importantes beneficios comerciales vigentes:<br><br>"
                 "• **15% de Descuento Inmediato** abonando mediante Transferencia Bancaria directa (Alias: `GALILEA.JOYAS.ARG`).<br>"
-                "• **3 y 6 Cuotas Fijas Sin Interés** con tarjetas de crédito bancarias Visa, Mastercard y American Express por Mercado Pago.<br>"
+                "• **Hasta 6 cuotas con Mercado Pago** con tarjetas Visa, Mastercard y American Express.<br>"
                 "• **Envío Gratis Asegurado** a todo el país a través de Andreani Custodia Express."
             ),
             "products": matched,
@@ -554,13 +554,13 @@ def generate_local_response(raw_query: str, products: list) -> dict:
         return {
             "reply": (
                 f"Para tu consulta de presupuesto{budget_str}, seleccioné creaciones destacadas forjadas en metales nobles:<br><br>"
-                "• **Piezas en Plata 925 de Ley:** Desde $58.000 a $95.000 (o 3 cuotas fijas sin interés de ~$19.000).<br>"
+                "• **Piezas en Plata 925 de Ley:** Desde $58.000 a $95.000.<br>"
                 "• **Orfebrería en Oro 18K Macizo:** Desde $190.000 a $380.000.<br>"
                 "• **Alta Joyería en Diamantes Cultivados:** Obras de autor de $390.000 a $780.000.<br><br>"
-                "Recordá que abonando por **Transferencia Bancaria tenés un 15% de descuento inmediato**, o podés financiar en **hasta 6 cuotas sin interés**."
+                "Recordá que abonando por **Transferencia Bancaria tenés un 15% de descuento inmediato**, o podés pagar en **hasta 6 cuotas con Mercado Pago**."
             ),
             "products": matched,
-            "suggestions": ["Opciones más accesibles", "Joyas en Oro 18K", "Calcular cuotas sin interés"]
+            "suggestions": ["Opciones más accesibles", "Joyas en Oro 18K", "Cuotas con Mercado Pago"]
         }
 
     # 25. Medios de Pago, Cuotas y Transferencia
@@ -568,9 +568,8 @@ def generate_local_response(raw_query: str, products: list) -> dict:
         return {
             "reply": (
                 "Contamos con los siguientes beneficios comerciales en toda la Argentina:<br><br>"
-                "• **3 y 6 Cuotas Fijas Sin Interés** con todas las tarjetas de crédito bancarias (Visa, Mastercard, Amex) procesadas por **Mercado Pago**.<br>"
-                "• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: `GALILEA.JOYAS.ARG`).<br>"
-                "• Facturación formal automática tipo A o B y protección de cobro bancario SSL de 256 bits."
+                "• **Hasta 6 cuotas con Mercado Pago** con tarjetas Visa, Mastercard y Amex. El costo de cada plan lo ves en Mercado Pago antes de pagar.<br>"
+                "• **15% de Descuento Inmediato** abonando por Transferencia Bancaria directa (Alias: `GALILEA.JOYAS.ARG`)."
             ),
             "products": matched,
             "suggestions": ["Datos para Transferencia", "¿Cómo es el envío Andreani?", "Ver catálogo completo"]
@@ -611,7 +610,7 @@ def generate_local_response(raw_query: str, products: list) -> dict:
             "• **Anillos, Solitarios y Alianzas** en Oro 18K macizo y Plata 925 de ley.<br>"
             "• **Gargantillas, Aros criollos y Pulseras** con diamantes cultivados éticos.<br>"
             "• **Medición y primer ajuste de talle 100% bonificado** en todo el país.<br>"
-            "• **Hasta 6 cuotas fijas sin interés** con tarjetas y 15% OFF por transferencia bancaria.<br><br>"
+            "• **Hasta 6 cuotas con Mercado Pago** y 15% OFF por transferencia bancaria.<br><br>"
             "Podés elegir alguna de las sugerencias rápidas debajo o consultarme sobre cualquier pieza, metal o detalle de compra."
         ),
         "products": matched,
@@ -644,7 +643,7 @@ def process_chat_message(message: str, history: list = None, products: list = No
             "reply": (
                 "Disculpas, como asesora de **GALILEA Atelier** me dedico exclusivamente a orientarte sobre nuestras piezas de joyería fina, "
                 "metales nobles, gemología, talles y compras en el atelier.<br><br>"
-                "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas sin interés."
+                "Podés consultarme sobre anillos, aros, collares, cómo medir tu talle de anillo o nuestras facilidades de pago en cuotas."
             ),
             "products": [],
             "suggestions": ["¿Cómo elijo mi talle de anillo?", "Ver joyas en Oro 18K", "Promociones y Cuotas"],
