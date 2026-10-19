@@ -14,3 +14,4 @@ data/instagram_auth.json
 data/instagram_cache.json
 # Código pendiente para cambiar la cuenta de transferencias (local)
 data/bank_code.json
+data/owner_whatsapp_test.json

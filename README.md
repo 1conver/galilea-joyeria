@@ -43,6 +43,13 @@ Tienda + panel `/admin` + backend Python. Local: `python server.py` y abrí http
   en Vercel y no se puede cambiar desde el panel. El código vale 10 minutos, una sola vez y solo para esos datos.
   Queda registrado quién y cuándo cambió la cuenta (se ve en Ajustes).
 
+## Avisos por WhatsApp para la dueña
+- `/admin` → **Ajustes** → **Avisos por WhatsApp para vos**: se activa o desactiva con una casilla. Llega un
+  WhatsApp al número de *Contacto y redes* con cada venta pagada por Mercado Pago y cada pedido nuevo por transferencia.
+- Usa CallMeBot (gratis; a veces no acepta números nuevos) o TextMeBot (pago, desde US$1/mes): se elige el
+  servicio y se pega su clave. La clave queda guardada en la base y nunca vuelve al navegador ni a la API pública.
+  "Mandarme un mensaje de prueba" comprueba que funciona. Si un aviso falla, el pedido sigue igual (queda en el log).
+
 ## Contacto e Instagram
 - WhatsApp e Instagram se editan en `/admin` → **Ajustes** → Contacto y redes. Los usan los botones de la
   tienda (encabezado, pie, chat) y las respuestas del chat. Por defecto: +54 9 11 5419-7890 y @galileaacc.

@@ -360,6 +360,31 @@
               <span style="font-size: 0.72rem; color: var(--text-muted);">Abre Mercado Pago para que pagues vos ese monto. Si se aprueba, aparece en Pedidos como "Cobro de prueba" (no descuenta stock ni suma a lo facturado). Después devolvelo desde Mercado Pago.</span>
             </div>
 
+            <!-- AVISOS POR WHATSAPP A LA DUEÑA (ventas pagadas y pedidos por transferencia) -->
+            <div class="settings-block">
+              <h3 class="settings-block-title">Avisos por WhatsApp para vos</h3>
+              <p class="settings-block-desc">Te llega un WhatsApp con cada venta pagada y cada pedido nuevo por transferencia, al número de <em>Contacto y redes</em> (<span id="wa-owner-phone">—</span>).</p>
+              <label style="display: flex; gap: 0.6rem; align-items: center; font-weight: 600; margin-bottom: 1rem; cursor: pointer;">
+                <input type="checkbox" id="set-wa-enabled" style="width: 1.1rem; height: 1.1rem; accent-color: var(--admin-rose-primary);">
+                Avisarme por WhatsApp
+              </label>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Servicio</label>
+                  <select id="set-wa-provider" class="form-input">
+                    <option value="callmebot">CallMeBot (gratis)</option>
+                    <option value="textmebot">TextMeBot (pago, desde US$1/mes)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Clave del servicio (API key)</label>
+                  <input type="password" id="set-wa-apikey" class="form-input" autocomplete="off" maxlength="64">
+                </div>
+              </div>
+              <p id="wa-provider-help" style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; margin: 0.4rem 0 0.9rem;"></p>
+              <button type="button" class="btn-luxury-outline" id="btn-wa-test">Mandarme un mensaje de prueba</button>
+            </div>
+
             <!-- CUENTA PARA TRANSFERENCIAS (la ve el cliente al pagar y le llega por email) -->
             <div class="settings-block">
               <h3 class="settings-block-title">Cuenta para transferencias</h3>

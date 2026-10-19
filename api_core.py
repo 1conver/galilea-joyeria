@@ -14,7 +14,8 @@ except Exception:
 
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 UPLOADS_DIR = os.path.join(PUBLIC_DIR, "uploads")
-SECRET_SETTINGS = ("mercadopago_access_token", "bank_history")
+SECRET_SETTINGS = ("mercadopago_access_token", "bank_history",
+                   "owner_whatsapp_enabled", "owner_whatsapp_provider", "owner_whatsapp_apikey")
 # El token de Mercado Pago no se carga desde el panel: va en las variables de entorno (Vercel / .env)
 SETTINGS_KEYS = ["ticker_text", "hero_tag", "hero_title", "hero_desc", "transfer_discount_pct",
                  "atelier_address", "contact_phone"]
@@ -145,6 +146,20 @@ def on_order_approved(order):
     if shortages:
         order["notes"] = (order.get("notes", "") + " Stock insuficiente al aprobar: " + "; ".join(shortages)).strip()
     notify.notify_order(order, "payment_approved")
+    notify_owner(order, "payment_approved")
+
+def owner_phone(settings):
+    return settings.get("whatsapp_number") or DEFAULT_CONTACT["whatsapp_number"]
+
+def notify_owner(order, event):
+    """WhatsApp a la dueña si lo activó en Ajustes. Si falla solo queda en el log."""
+    settings = load_settings()
+    if not settings.get("owner_whatsapp_enabled"):
+        return
+    sent, detail = notify.send_owner_whatsapp(settings.get("owner_whatsapp_provider"), settings.get("owner_whatsapp_apikey"),
+                                              owner_phone(settings), notify.owner_message(order, event))
+    if not sent:
+        print(f"WhatsApp a la dueña ({order['id']}, {event}) no enviado:", detail)
 
 
 # --- CATÁLOGO PÚBLICO ---
@@ -241,6 +256,7 @@ def bank_transfer(req):
                                                      get_store().put_order, payments.bank_details(settings))
     if notify.notify_order(order, "transfer_created"):
         get_store().put_order(order)
+    notify_owner(order, "transfer_created")
     return 200, response
 
 def track_order(req):
@@ -348,6 +364,49 @@ def admin_order_status(req):
     emailed = [e for e in order.get("emails_sent", []) if e not in emails_before]
     store.put_order(order)
     return ok(message=f"Pedido {order['id']} actualizado", order=order, emailed=emailed)
+
+def clean_owner_whatsapp(data, settings):
+    """Avisos por WhatsApp a la dueña: activado, servicio y clave (la clave vacía deja la guardada)."""
+    out = {}
+    if "owner_whatsapp_provider" in data:
+        provider = str(data["owner_whatsapp_provider"] or "")
+        if provider not in notify.WHATSAPP_PROVIDERS:
+            raise ValueError("Elegí el servicio para los avisos por WhatsApp")
+        out["owner_whatsapp_provider"] = provider
+    key = str(data.get("owner_whatsapp_apikey") or "").strip()
+    if key:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", key):
+            raise ValueError("La clave del servicio de WhatsApp no es válida")
+        out["owner_whatsapp_apikey"] = key
+    if "owner_whatsapp_enabled" in data:
+        enabled = bool(data["owner_whatsapp_enabled"])
+        if enabled and not (out.get("owner_whatsapp_apikey") or settings.get("owner_whatsapp_apikey")):
+            raise ValueError("Para activar los avisos por WhatsApp cargá la clave del servicio")
+        out["owner_whatsapp_enabled"] = enabled
+    return out
+
+def admin_whatsapp_info(req):
+    req.require("admin")
+    settings = load_settings()
+    return ok(enabled=bool(settings.get("owner_whatsapp_enabled")),
+              provider=settings.get("owner_whatsapp_provider") or "callmebot",
+              key_set=bool(settings.get("owner_whatsapp_apikey")), phone=owner_phone(settings))
+
+def admin_whatsapp_test(req):
+    """Mensaje de prueba con lo que está en pantalla (o lo guardado si la clave está vacía)."""
+    req.require("admin")
+    settings = load_settings()
+    store = get_store()
+    if store.get("owner_whatsapp_test", {}).get("at", 0) > time.time() - 20:
+        raise ApiError(429, "Esperá unos segundos antes de mandar otra prueba")
+    store.put("owner_whatsapp_test", {"at": time.time()})
+    provider = str(req.body.get("provider") or settings.get("owner_whatsapp_provider") or "")
+    apikey = str(req.body.get("apikey") or "").strip() or settings.get("owner_whatsapp_apikey")
+    sent, detail = notify.send_owner_whatsapp(provider, apikey, owner_phone(settings),
+                                              "GALILEA - Mensaje de prueba: así te van a llegar los avisos de ventas y pedidos nuevos.")
+    if not sent:
+        raise ApiError(400, f"No se pudo mandar: {detail}")
+    return ok(message=f"Mensaje de prueba enviado a {owner_phone(settings)}")
 
 def admin_mercadopago(req):
     req.require("admin")
@@ -488,6 +547,7 @@ def admin_settings(req):
     settings.update(clean_contact(req.body))
     settings.update(clean_hero_image(req.body))
     settings.update(clean_collection_images(req.body, settings.get("collection_images")))
+    settings.update(clean_owner_whatsapp(req.body, settings))
     if "bank_details" in req.body:
         bank = payments.clean_bank_details(req.body["bank_details"])
         if bank != settings.get("bank_details"):
@@ -555,6 +615,8 @@ ROUTES = [
     ("GET", r"/api/admin/bank", admin_bank_info),
     ("POST", r"/api/admin/bank/code", admin_bank_code),
     ("GET", r"/api/admin/mercadopago", admin_mercadopago),
+    ("GET", r"/api/admin/whatsapp", admin_whatsapp_info),
+    ("POST", r"/api/admin/whatsapp/test", admin_whatsapp_test),
     ("POST", r"/api/admin/test-payment", admin_test_payment),
     ("GET", r"/api/admin/users", admin_users),
     ("POST", r"/api/admin/users", admin_create_user),

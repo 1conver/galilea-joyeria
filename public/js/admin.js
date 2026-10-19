@@ -183,6 +183,7 @@ async function initDashboard() {
   setupFilterListeners();
   setupSettingsForm();
   setupTestPayment();
+  setupWhatsAppTest();
   setupUserCreationForm();
   switchModule('orders');
 }
@@ -1424,6 +1425,7 @@ async function fetchSettings() {
       BANK_INPUTS.forEach(([key, id]) => { document.getElementById(id).value = bank[key] || ''; });
       await fetchBankInfo();
       fetchMercadoPagoInfo();
+      fetchWhatsAppInfo();
       const last = (AdminState.bankInfo.history || [])[0];
       document.getElementById('bank-status').innerHTML = s.bank_configured
         ? 'Es la cuenta que ve el cliente al pagar por transferencia y la que le llega por email. Para cambiarla te pedimos tu contraseña.'
@@ -1433,6 +1435,56 @@ async function fetchSettings() {
   } catch (e) {
     console.error(e);
   }
+}
+
+// Avisos por WhatsApp a la dueña: servicio + clave; la clave guardada nunca vuelve al navegador
+const WA_PROVIDER_HELP = {
+  callmebot: 'Gratis. Agendá el número del bot que figura en <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">callmebot.com</a> y mandale "I allow callmebot to send me messages" desde el WhatsApp de la tienda: te responde con la clave. Si dice que está lleno, probá en unos días o usá TextMeBot.',
+  textmebot: 'Pago (desde US$1/mes). Pedí la clave en <a href="https://textmebot.com/" target="_blank" rel="noopener">textmebot.com</a> y conectá tu WhatsApp como dice ahí.'
+};
+
+async function fetchWhatsAppInfo() {
+  if (!AdminState.token || !document.getElementById('set-wa-enabled')) return;
+  try {
+    const res = await fetch('/api/admin/whatsapp', { headers: { 'Authorization': `Bearer ${AdminState.token}` } });
+    const data = await res.json();
+    if (!data.success) return;
+    document.getElementById('set-wa-enabled').checked = data.enabled;
+    document.getElementById('set-wa-provider').value = data.provider;
+    const key = document.getElementById('set-wa-apikey');
+    key.value = '';
+    key.placeholder = data.key_set ? 'Guardada (dejá vacío para no cambiarla)' : 'La que te manda el servicio';
+    document.getElementById('wa-owner-phone').textContent = data.phone;
+    renderWhatsAppHelp();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderWhatsAppHelp() {
+  document.getElementById('wa-provider-help').innerHTML = WA_PROVIDER_HELP[document.getElementById('set-wa-provider').value] || '';
+}
+
+function setupWhatsAppTest() {
+  const select = document.getElementById('set-wa-provider');
+  const btn = document.getElementById('btn-wa-test');
+  if (!select || !btn) return;
+  select.addEventListener('change', renderWhatsAppHelp);
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/whatsapp/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AdminState.token}` },
+        body: JSON.stringify({ provider: select.value, apikey: document.getElementById('set-wa-apikey').value.trim() })
+      });
+      const result = await res.json();
+      showToast(result.success ? result.message : (result.error || 'No se pudo mandar la prueba'));
+    } catch (err) {
+      showToast('Sin conexión, probá de nuevo');
+    }
+    btn.disabled = false;
+  });
 }
 
 // Mercado Pago: muestra si la cuenta conectada es de prueba o real y permite pagar un cobro de prueba
@@ -1617,7 +1669,10 @@ function setupSettingsForm() {
         whatsapp_number: document.getElementById('set-whatsapp').value.trim(),
         instagram_url: document.getElementById('set-instagram').value.trim(),
         hero_image: document.getElementById('set-hero-image').value.trim(),
-        collection_images: Object.fromEntries(COLLECTION_CARDS.map(([id]) => [id, document.getElementById(`set-col-${id}`).value.trim()]))
+        collection_images: Object.fromEntries(COLLECTION_CARDS.map(([id]) => [id, document.getElementById(`set-col-${id}`).value.trim()])),
+        owner_whatsapp_enabled: document.getElementById('set-wa-enabled').checked,
+        owner_whatsapp_provider: document.getElementById('set-wa-provider').value,
+        owner_whatsapp_apikey: document.getElementById('set-wa-apikey').value.trim()
       };
       // la cuenta solo se manda si cambió: así guardar textos o la portada no pide contraseña
       const bank = Object.fromEntries(BANK_INPUTS.map(([key, id]) => [key, document.getElementById(id).value.trim()]));

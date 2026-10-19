@@ -4,7 +4,7 @@ Variables de entorno: SMTP_USER (ej. pedidos@galilea.online) y SMTP_PASSWORD; op
 SMTP_HOST (smtp.hostinger.com), SMTP_PORT (465) y MAIL_FROM_NAME (GALILEA Atelier).
 Sin SMTP_USER/SMTP_PASSWORD no se envía nada y la tienda funciona igual.
 Cada evento se envía una sola vez por pedido (queda anotado en order["emails_sent"])."""
-import os, smtplib, ssl
+import os, re, smtplib, ssl, urllib.parse, urllib.request
 from html import escape
 from email.message import EmailMessage
 from email.utils import formataddr
@@ -122,3 +122,45 @@ def notify_order(order, event):
         return False
     sent.append(event)
     return True
+
+
+# --- AVISO POR WHATSAPP A LA DUEÑA (ventas y pedidos nuevos) ---
+# Servicios que mandan un WhatsApp con un link + clave (sin cuenta de Meta):
+# CallMeBot es gratis y solo escribe al número que lo activó; TextMeBot es pago y usa tu propio WhatsApp.
+WHATSAPP_PROVIDERS = {
+    "callmebot": ("https://api.callmebot.com/whatsapp.php", "phone"),
+    "textmebot": ("https://api.textmebot.com/send.php", "recipient"),
+}
+
+
+def send_owner_whatsapp(provider, apikey, phone, text):
+    """Manda el WhatsApp. Devuelve (ok, detalle); nunca lanza: un aviso que falla no frena el pedido."""
+    if provider not in WHATSAPP_PROVIDERS or not apikey:
+        return False, "Falta elegir el servicio o cargar la clave"
+    digits = "".join(c for c in str(phone or "") if c.isdigit())
+    if not 8 <= len(digits) <= 15:
+        return False, "Falta el WhatsApp de la tienda en Contacto y redes"
+    url, phone_param = WHATSAPP_PROVIDERS[provider]
+    query = urllib.parse.urlencode({phone_param: "+" + digits, "text": text, "apikey": apikey})
+    try:
+        with urllib.request.urlopen(f"{url}?{query}", timeout=10) as r:
+            body = r.read().decode("utf-8", "replace")
+    except Exception as e:
+        return False, f"El servicio no respondió ({e.__class__.__name__})"
+    answer = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body)).strip()
+    low = answer.lower()
+    if any(w in low for w in ("error", "invalid", "not allowed", "wrong", "paused")):
+        return False, answer[:160] or "El servicio rechazó el mensaje"
+    return True, answer[:160]
+
+
+def owner_message(order, event):
+    """Texto del aviso a la dueña (sin datos de contacto del cliente, solo lo necesario)."""
+    title = {"payment_approved": "Venta pagada con Mercado Pago",
+             "transfer_created": "Pedido nuevo por transferencia (esperando el pago)"}.get(event, "Novedad en un pedido")
+    if order.get("test_payment"):
+        title = "Cobro de prueba aprobado"
+    items = "\n".join(f"{it.get('quantity', 1)} x {it.get('name', '')}" for it in order.get("items", []))
+    name = (order.get("customer") or {}).get("name") or "Cliente"
+    return (f"GALILEA - {title}\nPedido {order['id']} - {_money(order.get('total_amount'))}\n{name}\n{items}\n"
+            f"Panel: {payments.site_url()}/admin")
